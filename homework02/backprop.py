@@ -1,10 +1,11 @@
 import numpy as np
 
 def sigmoid(x):
-    pass
+    return 1 / (1 + np.exp(-x))
 
 def sigmoidprime(x):
-    pass
+    sig = sigmoid(x)
+    return sig*(1-sig)
 
 
 # We will train the network on logical gates, means there are two (sometimes only one) inputs and an output for each functionality
@@ -13,8 +14,50 @@ def sigmoidprime(x):
 
 training_data = {
     # input: [and, or, nand, nor, xor]
-    [0, 0]: [0, 0, 1, 1, 0],
-    [0, 1]: [0, 1, 1, 0, 1],
-    [1, 0]: [0, 1, 1, 0, 1],
-    [1, 1]: [1, 1, 0, 0, 0]
+    (0, 0): [0, 0, 1, 1, 0],
+    (0, 1): [0, 1, 1, 0, 1],
+    (1, 0): [0, 1, 1, 0, 1],
+    (1, 1): [1, 1, 0, 0, 0]
 }
+
+class Perceptron():
+    def __init__(self, input_units):
+        """Perceptron with bias and i ingoing weighted activations"""
+        self.bias = np.random.randn()
+        self.weights = [np.random.randn() for _ in range(input_units)]
+        self.alpha = 1
+
+    def forward_step(self, inputs):
+        pass
+
+    def update(self, delta):
+        pass
+
+
+class MLP():
+    def __init__(self, input_units, layers, output_units):
+        """layers is an array, containing the input and hidden layers
+            It's length-1 is the number of hidden layers, the elements are the number of neurons on every layer"""
+        self.input_layer = []
+        self.hidden_layers = []
+        self.output_neurons = []
+
+        # initialize input layer
+        for _ in range(layers[0]):
+            self.input_layer.append(Perceptron(input_units))
+
+        # initialize hidden layers
+        for i in range(1, len(layers)):
+            self.hidden_layers.append([])
+            for j in range(layers[i]):
+                self.hidden_layers[i-1].append(Perceptron(layers[i-1]))
+
+        # initialize output layer
+        for _ in range(output_units):
+            self.output_neurons.append(Perceptron(layers[len(layers)-1]))
+
+
+
+
+# MLP with 2 inputs, an input layer with 4 perceptrons, one hidden layer with 4 perceptrons and an output layer with a single perceptron
+mlp = MLP(2, [4, 4], 1)
