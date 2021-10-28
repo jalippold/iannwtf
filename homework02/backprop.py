@@ -24,11 +24,17 @@ class Perceptron():
     def __init__(self, input_units):
         """Perceptron with bias and i ingoing weighted activations"""
         self.bias = np.random.randn()
-        self.weights = [np.random.randn() for _ in range(input_units)]
+        self.weights = np.array([np.random.randn() for _ in range(input_units)])
         self.alpha = 1
+        self.output = None
 
     def forward_step(self, inputs):
-        pass
+        if len(inputs) is not len(self.weights):
+            raise IndexError("Length of input does not match length of weights!")
+            
+        self.output = sigmoid(np.sum(np.multiply(self.weights, inputs))+self.bias)
+        return self.output
+        
 
     def update(self, delta):
         pass
@@ -39,54 +45,32 @@ class MLP():
         """layers is an array, containing the input and hidden layers
             It's length-1 is the number of hidden layers, the elements are the number of neurons on every layer"""
         self.input_units = input_units
-        self.input_layer = []
-        self.hidden_layers = []
-        self.output_neurons = []
 
-        # initialize input layer
-        for _ in range(layers[0]):
-            self.input_layer.append(Perceptron(input_units))
+        # layers[0] represents size of input layer
+        self.input_layer = np.array([Perceptron(input_units) for _ in range(layers[0])])
 
         # initialize hidden layers
+        hlayers = []
         for i in range(1, len(layers)):
-            self.hidden_layers.append([])
+            hlayers.append([])
             for j in range(layers[i]):
-                self.hidden_layers[i-1].append(Perceptron(layers[i-1]))
+                hlayers[i-1].append(Perceptron(layers[i-1]))
+        self.hidden_layers = np.array(hlayers)
 
         # initialize output layer
-        for _ in range(output_units):
-            self.output_neurons.append(Perceptron(layers[len(layers)-1]))
+        self.output_neurons = np.array([Perceptron(layers[-1]) for _ in range(output_units)])
 
 
     def calculate(self, input):
-        if len(input) is not self.input_units:
-            raise ValueError("Len of input does not match networks structure!")
-
-        vals = []
-        next_vals = []
-
-        for i in len(self.input_layer):
-            next_vals.append(self.input_layer[i].forward_step(input))
+        next_vals = np.array([p.forward_step(input) for p in self.input_layer])
         
 
         for i in range(len(self.hidden_layers)):
-            vals = next_vals.copy()
+            vals = np.copy(next_vals)
 
-            if len(vals) is not len(self.hidden_layers[i]):
-                raise IndexError("Somethings wrong in the internal structure!")
+            next_vals = np.array([p.forward_step(vals) for p in self.hidden_layers[i]])
 
-            next_vals.clear()
-            for j in range(self.hidden_layers[i]):
-                next_vals.append(self.hidden_layers[i][j].forward_step(vals))
-
-        if len(next_vals) is not len(self.output_neurons):
-            raise IndexError("Somethings wrong in the internal structure!")
-
-        outputs = []
-        for i in range(len(self.output_neurons)):
-            outputs.append(self.output_neurons[i].forward_step(next_vals))
-
-        return outputs
+        return np.array([p.forward_step(next_vals) for p in self.output_neurons])
 
     def backpropagate(self, output, expected_vals):
         # Use loss function and backpropagation to change Perceptrons weights
@@ -94,3 +78,12 @@ class MLP():
 
 # MLP with 2 inputs, an input layer with 4 perceptrons, one hidden layer with 4 perceptrons and an output layer with a single perceptron
 mlp = MLP(2, [4, 4], 1)
+
+output = mlp.calculate(np.array([0,0]))
+print(output)
+output = mlp.calculate(np.array([0,1]))
+print(output)
+output = mlp.calculate(np.array([1,0]))
+print(output)
+output = mlp.calculate(np.array([1,1]))
+print(output)
