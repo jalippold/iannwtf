@@ -27,17 +27,23 @@ class Perceptron():
         self.weights = np.array([np.random.randn() for _ in range(input_units)])
         self.alpha = 1
         self.output = None
+        self.inputs = None
 
     def forward_step(self, inputs):
         if len(inputs) is not len(self.weights):
             raise IndexError("Length of input does not match length of weights!")
+        # remember input/activations for backpropagation
+        self.inputs = inputs
             
         self.output = sigmoid(np.sum(np.multiply(self.weights, inputs))+self.bias)
         return self.output
         
 
     def update(self, delta):
-        pass
+        # update all weights with the one delta multiplied by the matching input/activation
+        # notation on the homework sheet is not that clear but I think updates are like this:
+        self.weights += (delta * self.inputs)
+        self.bias -= (self.alpha * delta)
 
 
 class MLP():
@@ -74,7 +80,34 @@ class MLP():
 
     def backpropagate(self, output, expected_vals):
         # Use loss function and backpropagation to change Perceptrons weights
+        # calculate delta for every perceptron and call p.update(delta)
+
         pass
+
+    def __str__(self):
+        ostr = ""
+        for i in range(self.input_units):
+            ostr += f"\tIn {i}"
+        
+        ostr += "\n\n"
+        for i in range(len(self.input_layer)):
+            ostr += f"Val {self.input_layer[i].output:.2f}\t"
+
+
+        ostr += "\n\n"
+        for i in range(len(self.hidden_layers)):
+            for j in range(len(self.hidden_layers[i])):
+                ostr += f"Val {self.hidden_layers[i][j].output:.2f}\t"
+
+
+            ostr += "\n\n"
+
+        for i in range(len(self.output_neurons)):
+            ostr += f"\tOut {i}"
+        
+        return ostr
+
+
 
 # MLP with 2 inputs, an input layer with 4 perceptrons, one hidden layer with 4 perceptrons and an output layer with a single perceptron
 mlp = MLP(2, [4, 4], 1)
@@ -87,3 +120,6 @@ output = mlp.calculate(np.array([1,0]))
 print(output)
 output = mlp.calculate(np.array([1,1]))
 print(output)
+print()
+
+print(mlp)
