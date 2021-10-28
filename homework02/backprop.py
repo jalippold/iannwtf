@@ -25,17 +25,18 @@ class Perceptron():
         """Perceptron with bias and i ingoing weighted activations"""
         self.bias = np.random.randn()
         self.weights = np.array([np.random.randn() for _ in range(input_units)])
-        self.alpha = 1
+        self.alpha = 0.5
         self.output = None
         self.inputs = None
+        self.drive = None
 
     def forward_step(self, inputs):
         if len(inputs) is not len(self.weights):
             raise IndexError("Length of input does not match length of weights!")
         # remember input/activations for backpropagation
         self.inputs = inputs
-            
-        self.output = sigmoid(np.sum(np.multiply(self.weights, inputs))+self.bias)
+        self.drive = np.sum(np.multiply(self.weights, inputs))
+        self.output = sigmoid(self.drive+self.bias)
         return self.output
         
 
@@ -68,21 +69,56 @@ class MLP():
 
 
     def calculate(self, input):
+        # output of input layer
         next_vals = np.array([p.forward_step(input) for p in self.input_layer])
         
-
+        # loop through hidden layers
         for i in range(len(self.hidden_layers)):
             vals = np.copy(next_vals)
-
             next_vals = np.array([p.forward_step(vals) for p in self.hidden_layers[i]])
-
+        
+        # return output of output layer
         return np.array([p.forward_step(next_vals) for p in self.output_neurons])
 
     def backpropagate(self, output, expected_vals):
         # Use loss function and backpropagation to change Perceptrons weights
         # calculate delta for every perceptron and call p.update(delta)
+        deltas = np.empty(len(self.output_neurons))
+        
+        # for output layer: delta = -(ti-yi)*sig'(diN)
+        efunc = (expected_vals-output)
+        for i in range(len(self.output_neurons)):
+            deltas[i] = efunc[i]*sigmoidprime(self.output_neurons[i].output)
+            self.output_neurons[i].update(deltas[i])
 
-        pass
+        # for other layers
+        nextlayer = self.output_neurons
+        nextsize = len(self.output_neurons)
+        for l in range(len(self.hidden_layers)-1, -1, -1):
+            nextdeltas = np.empty(len(self.hidden_layers[l]))
+            
+            for i in range(len(self.hidden_layers[l])):
+                esum = 0
+                for k in range(nextsize):
+                    esum += deltas[k] * nextlayer[k].weights[i]
+
+                nextdeltas[i] = esum * sigmoidprime(self.hidden_layers[l][i].output)
+                self.hidden_layers[l][i].update(nextdeltas[i])
+
+            nextsize = len(self.hidden_layers[l])
+            nextlayer = self.hidden_layers[l]
+
+            deltas = nextdeltas.copy()
+
+        # do this again for the input layer!
+        for i in range(len(self.input_layer)):
+            esum = 0
+            for k in range(len(self.hidden_layers[0])):
+                esum += deltas[k] * self.hidden_layers[0][k].weights[i]
+            
+            delta = esum * sigmoidprime(self.input_layer[i].output)
+            self.input_layer[i].update(delta)
+
 
     def __str__(self):
         ostr = ""
@@ -91,13 +127,13 @@ class MLP():
         
         ostr += "\n\n"
         for i in range(len(self.input_layer)):
-            ostr += f"Val {self.input_layer[i].output:.2f}\t"
+            ostr += f"P{i} {self.input_layer[i].output:.2f}/{self.input_layer[i].bias:.2f}\t"
 
 
         ostr += "\n\n"
         for i in range(len(self.hidden_layers)):
             for j in range(len(self.hidden_layers[i])):
-                ostr += f"Val {self.hidden_layers[i][j].output:.2f}\t"
+                ostr += f"P{j} {self.hidden_layers[i][j].output:.2f}/{self.hidden_layers[i][j].bias:.2f}\t"
 
 
             ostr += "\n\n"
@@ -110,16 +146,32 @@ class MLP():
 
 
 # MLP with 2 inputs, an input layer with 4 perceptrons, one hidden layer with 4 perceptrons and an output layer with a single perceptron
-mlp = MLP(2, [4, 4], 1)
+mlp = MLP(2, [8, 8], 5)
 
-output = mlp.calculate(np.array([0,0]))
+inpt = np.array([[0,0],[0,1],[1,0],[1,1]])
+expected_output = np.array([[0, 0, 1, 1, 0],
+                            [1, 0, 0, 1, 1],
+                            [1, 0, 0, 1, 1],
+                            [1, 1, 0, 0, 0]])
+for i in range(500):
+    output = mlp.calculate(inpt[0])
+    mlp.backpropagate(output, expected_output[0])
+    output = mlp.calculate(inpt[1])
+    mlp.backpropagate(output, expected_output[1])
+    output = mlp.calculate(inpt[2])
+    mlp.backpropagate(output, expected_output[2])
+    output = mlp.calculate(inpt[3])
+    mlp.backpropagate(output, expected_output[3])
+    
+output = mlp.calculate(inpt[0])
 print(output)
-output = mlp.calculate(np.array([0,1]))
+mlp.backpropagate(output, expected_output[0])
+output = mlp.calculate(inpt[1])
 print(output)
-output = mlp.calculate(np.array([1,0]))
+mlp.backpropagate(output, expected_output[1])
+output = mlp.calculate(inpt[2])
 print(output)
-output = mlp.calculate(np.array([1,1]))
+mlp.backpropagate(output, expected_output[2])
+output = mlp.calculate(inpt[3])
 print(output)
-print()
-
-print(mlp)
+mlp.backpropagate(output, expected_output[3])
