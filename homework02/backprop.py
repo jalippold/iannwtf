@@ -1,4 +1,5 @@
 import numpy as np
+from matplotlib import pyplot as plt
 
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
@@ -23,8 +24,6 @@ class Perceptron():
             raise IndexError("Length of input does not match length of weights!")
         # remember input/activations for backpropagation
         self.inputs = inputs
-        #self.drive = np.sum(np.multiply(self.weights, inputs))
-        #self.output = sigmoid(self.drive+self.bias)
         self.output = sigmoid(np.sum(np.multiply(self.weights, inputs))+self.bias)
         return self.output
         
@@ -42,15 +41,13 @@ class MLP():
             It's length-1 is the number of hidden layers, the elements are the number of neurons on every layer"""
         self.input_units = input_units
 
-        # layers[0] represents size of input layer
-        self.input_layer = np.array([Perceptron(input_units) for _ in range(layers[0])])
-
         # initialize hidden layers
         hlayers = []
+        self.input_layer = np.array([Perceptron(input_units) for _ in range(layers[0])])
+        hlayers.append([Perceptron(input_units) for _ in range(layers[0])])
+
         for i in range(1, len(layers)):
-            hlayers.append([])
-            for j in range(layers[i]):
-                hlayers[i-1].append(Perceptron(layers[i-1]))
+            hlayers.append([Perceptron(layers[i-1]) for _ in range(layers[i])])
         self.hidden_layers = np.array(hlayers)
 
         # initialize output layer
@@ -59,10 +56,10 @@ class MLP():
 
     def calculate(self, input):
         # output of input layer
-        next_vals = np.array([p.forward_step(input) for p in self.input_layer])
+        next_vals = np.array([p.forward_step(input) for p in self.hidden_layers[0]])
         
         # loop through hidden layers
-        for i in range(len(self.hidden_layers)):
+        for i in range(1, len(self.hidden_layers)):
             vals = np.copy(next_vals)
             next_vals = np.array([p.forward_step(vals) for p in self.hidden_layers[i]])
         
@@ -99,6 +96,7 @@ class MLP():
 
             deltas = nextdeltas.copy()
 
+        return
         # do this again for the input layer!
         for i in range(len(self.input_layer)):
             esum = 0
@@ -135,7 +133,7 @@ class MLP():
 
 
 # MLP with 2 inputs, an input layer with 4 perceptrons, one hidden layer with 4 perceptrons and an output layer with a single perceptron
-mlp = MLP(3, [10, 10], 5)
+mlp = MLP(3, [4, 4], 5)
 
 inpt = np.array([[0,0, 0*0],[0,1, 0*1],[1,0, 1*0],[1,1, 1*1]])
 expected_output = np.array([[0, 0, 1, 1, 0],
@@ -162,3 +160,23 @@ for i in range(1000):
 np.set_printoptions(precision=3, suppress=True)
 print(f"Loss (Input/Logic function):\n {np.mean(loss, axis=2)}\n")
 print(f"Accuracy(Input/Logic function):\n {np.mean(accuracy, axis=2)}")
+
+gates = ["or", "and", "nor", "nand", "xor"]
+
+x = [i for i in range(len(accuracy[0][0]))]
+"""for i in range(len(accuracy)):
+
+    for j in range(len(accuracy[0])):
+        plt.plot(x, accuracy[i][j], label=gates[j])
+    
+    plt.legend()
+    plt.title("Accuracy (Input: [x1, x2, x1*x2]): " + str(inpt[i]))
+    plt.show()"""
+
+for i in range(len(loss)):
+    for j in range(len(loss[0])):
+        plt.plot(x, loss[i][j], label=gates[j])
+    
+    plt.legend()
+    plt.title("Loss (Input: [x1, x2, x1*x2]): " + str(inpt[i]))
+    plt.show()
