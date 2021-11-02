@@ -1,5 +1,7 @@
 import numpy as np
 from MLP import MLP
+from MathUtil import calc_mean_accuracy, calc_mean_loss
+import matplotlib.pyplot as plt
 
 # create a MLP with two inputs, one hidden layer with 4 perceptrons and one output neuron
 mlp = MLP([2, 4, 1])
@@ -18,16 +20,37 @@ labels = np.array([
     xor_label
 ])
 
-for i in range(1000):
-    output = mlp.forward_step(input[0])
-    mlp.backprop_step(labels[0:1,0])
-    output = mlp.forward_step(input[1])
-    mlp.backprop_step(labels[0:1,1])
-    output = mlp.forward_step(input[2])
-    mlp.backprop_step(labels[0:1,2])
-    output = mlp.forward_step(input[3])
-    mlp.backprop_step(labels[0:1,3])
+analysis = []
 
+for i in range(1000):
+    target = and_label
+    outputs = []
+    outputs.append(mlp.forward_step(input[0]))
+    mlp.backprop_step(target)
+    outputs.append(mlp.forward_step(input[1]))
+    mlp.backprop_step(target)
+    outputs.append(mlp.forward_step(input[2]))
+    mlp.backprop_step(target)
+    outputs.append(mlp.forward_step(input[3]))
+    mlp.backprop_step(target)
+    # keep track of accuracy and loss for later visualization
+    mean_accuracy = calc_mean_accuracy(outputs, target)
+    mean_loss = calc_mean_loss(outputs, target)
+    analysis.append([i, mean_accuracy, mean_loss])
+
+analysis = np.array(analysis)
+fig, (ax1, ax2) = plt.subplots(2, 1)
+
+ax1.plot(analysis[:,0], analysis[:,1])
+ax1.set_ylabel("Average Accuracy")
+
+ax2.plot(analysis[:,0], analysis[:,2])
+ax2.set_ylabel("Average Loss")
+ax2.set_xlabel("Epoch")
+
+plt.show()
+
+print("Doing one test:")
 output = mlp.forward_step(input[0])
 print(f"Output for input {input[0]}: {output}")
 output = mlp.forward_step(input[1])

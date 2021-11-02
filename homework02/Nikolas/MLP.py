@@ -10,6 +10,8 @@ class MLP():
         The elements are the number of neurons on every layer
         """
         # input layer is not really made up of perceptrons but instead only describes the input vector
+        # still remember how many inputs there are
+        self.input_number = layers[0]
 
         # initialize hidden layers
         hlayers = []
@@ -33,7 +35,8 @@ class MLP():
             next_vals = np.array([p.forward_step(vals) for p in hl])
         
         # return output of output layer
-        return np.array([p.forward_step(next_vals) for p in self.output_neurons])
+        self.output = np.array([p.forward_step(next_vals) for p in self.output_neurons])
+        return self.output
 
     def backprop_step(self, expected_vals):
         # Use loss function and backpropagation to change Perceptrons weights
@@ -68,18 +71,14 @@ class MLP():
 
     def __str__(self):
         ostr = ""
-        for i in range(self.input_units):
+        for i in range(self.input_number):
             ostr += f"\tIn {i}"
-        
-        ostr += "\n\n"
-        for i in range(len(self.input_layer)):
-            ostr += f"P{i} {self.input_layer[i].output:.2f}/{self.input_layer[i].bias:.2f}\t"
 
 
         ostr += "\n\n"
         for i in range(len(self.hidden_layers)):
             for j in range(len(self.hidden_layers[i])):
-                ostr += f"P{j} {self.hidden_layers[i][j].output:.2f}/{self.hidden_layers[i][j].bias:.2f}\t"
+                ostr += f"P{j} {self.hidden_layers[i][j].output}/{self.hidden_layers[i][j].bias}\t"
 
 
             ostr += "\n\n"
