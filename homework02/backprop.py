@@ -8,24 +8,12 @@ def sigmoidprime(x):
     return sig*(1-sig)
 
 
-# We will train the network on logical gates, means there are two (sometimes only one) inputs and an output for each functionality
-# and, or, not and, not or, xor => 5 outputs
-# as training data we will need the four possible input combinations and the corresponding five output values
-
-training_data = {
-    # input: [and, or, nand, nor, xor]
-    (0, 0): [0, 0, 1, 1, 0],
-    (0, 1): [0, 1, 1, 0, 1],
-    (1, 0): [0, 1, 1, 0, 1],
-    (1, 1): [1, 1, 0, 0, 0]
-}
-
 class Perceptron():
     def __init__(self, input_units):
         """Perceptron with bias and i ingoing weighted activations"""
         self.bias = np.random.randn()
         self.weights = np.array([np.random.randn() for _ in range(input_units)])
-        self.alpha = 0.5
+        self.alpha = 1.
         self.output = None
         self.inputs = None
         self.drive = None
@@ -35,15 +23,16 @@ class Perceptron():
             raise IndexError("Length of input does not match length of weights!")
         # remember input/activations for backpropagation
         self.inputs = inputs
-        self.drive = np.sum(np.multiply(self.weights, inputs))
-        self.output = sigmoid(self.drive+self.bias)
+        #self.drive = np.sum(np.multiply(self.weights, inputs))
+        #self.output = sigmoid(self.drive+self.bias)
+        self.output = sigmoid(np.sum(np.multiply(self.weights, inputs))+self.bias)
         return self.output
         
 
     def update(self, delta):
         # update all weights with the one delta multiplied by the matching input/activation
         # notation on the homework sheet is not that clear but I think updates are like this:
-        self.weights += (delta * self.inputs)
+        self.weights -= (self.alpha * delta * self.inputs)
         self.bias -= (self.alpha * delta)
 
 
@@ -86,7 +75,7 @@ class MLP():
         deltas = np.empty(len(self.output_neurons))
         
         # for output layer: delta = -(ti-yi)*sig'(diN)
-        efunc = (expected_vals-output)
+        efunc = -1. * (expected_vals-output)
         for i in range(len(self.output_neurons)):
             deltas[i] = efunc[i]*sigmoidprime(self.output_neurons[i].output)
             self.output_neurons[i].update(deltas[i])
@@ -146,32 +135,30 @@ class MLP():
 
 
 # MLP with 2 inputs, an input layer with 4 perceptrons, one hidden layer with 4 perceptrons and an output layer with a single perceptron
-mlp = MLP(2, [8, 8], 5)
+mlp = MLP(3, [10, 10], 5)
 
-inpt = np.array([[0,0],[0,1],[1,0],[1,1]])
+inpt = np.array([[0,0, 0*0],[0,1, 0*1],[1,0, 1*0],[1,1, 1*1]])
 expected_output = np.array([[0, 0, 1, 1, 0],
                             [1, 0, 0, 1, 1],
                             [1, 0, 0, 1, 1],
                             [1, 1, 0, 0, 0]])
-for i in range(500):
-    output = mlp.calculate(inpt[0])
-    mlp.backpropagate(output, expected_output[0])
-    output = mlp.calculate(inpt[1])
-    mlp.backpropagate(output, expected_output[1])
-    output = mlp.calculate(inpt[2])
-    mlp.backpropagate(output, expected_output[2])
-    output = mlp.calculate(inpt[3])
-    mlp.backpropagate(output, expected_output[3])
+
+accuracy = [ [ [] for _ in range(5) ] for _ in range(4)]
+loss = [ [ [] for _ in range(5) ] for _ in range(4)]
+
+for i in range(1000):
+    for i in range(4):
+        output = mlp.calculate(inpt[i])
+        for j in range(len(output)):
+            loss[i][j].append((expected_output[i][j]-output[j])**2)
+            if expected_output[i][j] == int(round(output[j], 0)):
+                accuracy[i][j].append(1)
+            else:
+                accuracy[i][j].append(0)
+
+        mlp.backpropagate(output, expected_output[i])
     
-output = mlp.calculate(inpt[0])
-print(output)
-mlp.backpropagate(output, expected_output[0])
-output = mlp.calculate(inpt[1])
-print(output)
-mlp.backpropagate(output, expected_output[1])
-output = mlp.calculate(inpt[2])
-print(output)
-mlp.backpropagate(output, expected_output[2])
-output = mlp.calculate(inpt[3])
-print(output)
-mlp.backpropagate(output, expected_output[3])
+
+np.set_printoptions(precision=3, suppress=True)
+print(f"Loss (Input/Logic function):\n {np.mean(loss, axis=2)}\n")
+print(f"Accuracy(Input/Logic function):\n {np.mean(accuracy, axis=2)}")
