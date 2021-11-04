@@ -5,7 +5,7 @@ from Perceptron import Perceptron
 class MLP():
     def __init__(self, layers):
         """
-        layers is an array, containing input, hidden and output layers.
+        layers is an array, containing input, hidden and output layers. ([input, h1, ..., hn, output])
         It's length-2 is the number of hidden layers.
         The elements are the number of neurons on every layer
         """
