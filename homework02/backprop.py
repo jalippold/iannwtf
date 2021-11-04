@@ -133,7 +133,7 @@ class MLP():
 
 
 # MLP with 2 inputs, an input layer with 4 perceptrons, one hidden layer with 4 perceptrons and an output layer with a single perceptron
-mlp = MLP(3, [4, 4], 5)
+mlp = MLP(3, [5, 5], 5)
 
 inpt = np.array([[0,0, 0*0],[0,1, 0*1],[1,0, 1*0],[1,1, 1*1]])
 expected_output = np.array([[0, 0, 1, 1, 0],
