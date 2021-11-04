@@ -22,17 +22,13 @@ labels = np.array([
 
 analysis = []
 
+target = xor_label
 for i in range(1000):
-    target = and_label
     outputs = []
-    outputs.append(mlp.forward_step(input[0]))
-    mlp.backprop_step(target)
-    outputs.append(mlp.forward_step(input[1]))
-    mlp.backprop_step(target)
-    outputs.append(mlp.forward_step(input[2]))
-    mlp.backprop_step(target)
-    outputs.append(mlp.forward_step(input[3]))
-    mlp.backprop_step(target)
+    for j in range(4):
+        outputs.append(mlp.forward_step(input[j]))
+        mlp.backprop_step(target[j])
+    
     # keep track of accuracy and loss for later visualization
     mean_accuracy = calc_mean_accuracy(outputs, target)
     mean_loss = calc_mean_loss(outputs, target)
