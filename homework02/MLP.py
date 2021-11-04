@@ -5,9 +5,9 @@ from Perceptron import Perceptron
 class MLP():
     def __init__(self, layers):
         """
-        layers is an array, containing input, hidden and output layers. ([input, h1, ..., hn, output])
+        :param layers is an array, containing input, hidden and output layers. ([input, h1, ..., hn, output])
         It's length-2 is the number of hidden layers.
-        The elements are the number of neurons on every layer
+        The elements are the number of neurons on the respective layer.
         """
         # input layer is not really made up of perceptrons but instead only describes the input vector
         # still remember how many inputs there are
@@ -28,6 +28,10 @@ class MLP():
 
 
     def forward_step(self, input):
+        """
+        Calculate output of the MLP.
+        :param input to the MLP
+        """
         next_vals = input
         # loop through hidden layers
         for hl in self.hidden_layers:
@@ -38,13 +42,16 @@ class MLP():
         self.output = np.array([p.forward_step(next_vals) for p in self.output_neurons])
         return self.output
 
-    def backprop_step(self, expected_vals):
-        # Use loss function and backpropagation to change Perceptrons weights
-        # calculate delta for every layer and call p.update(delta)
+    def backprop_step(self, target):
+        """
+        Use loss function and backpropagation to change Perceptron weights.
+        :param target is the expected output.
+        """
+        # calculate delta for every layer and call .update(delta)
         deltas = np.empty(len(self.output_neurons))
         
         # for output layer: delta = -(ti-yi)*sig'(diN)
-        efunc = -1.0 * (expected_vals-self.output)
+        efunc = -1.0 * (target-self.output)
         for i, n_out in enumerate(self.output_neurons):
             deltas[i] = efunc[i] * sigmoidprime(n_out.output)
             n_out.update(deltas[i])
@@ -68,22 +75,3 @@ class MLP():
 
             deltas = nextdeltas.copy()
 
-
-    def __str__(self):
-        ostr = ""
-        for i in range(self.input_number):
-            ostr += f"\tIn {i}"
-
-
-        ostr += "\n\n"
-        for i in range(len(self.hidden_layers)):
-            for j in range(len(self.hidden_layers[i])):
-                ostr += f"P{j} {self.hidden_layers[i][j].output}/{self.hidden_layers[i][j].bias}\t"
-
-
-            ostr += "\n\n"
-
-        for i in range(len(self.output_neurons)):
-            ostr += f"\tOut {i}"
-        
-        return ostr

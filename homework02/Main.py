@@ -1,3 +1,6 @@
+"""
+This is the main script for executing the self-implemented MLP on learning logical operations.
+"""
 import numpy as np
 from MLP import MLP
 from MathUtil import calc_mean_accuracy, calc_mean_loss
@@ -6,23 +9,17 @@ import matplotlib.pyplot as plt
 # create a MLP with two inputs, one hidden layer with 4 perceptrons and one output neuron
 mlp = MLP([2, 4, 1])
 
+analysis = []
+
 input = np.array([[0., 0.], [0., 1.], [1., 0.], [1., 1.]])
 and_label = np.array([0., 0., 0., 1.])
 or_label = np.array([0., 1., 1., 1.])
 nand_label = np.array([1., 1., 1., 0.])
 nor_label = np.array([1., 0., 0., 0.])
 xor_label = np.array([0., 1., 1., 0.])
-labels = np.array([
-    and_label,
-    or_label,
-    nand_label,
-    nor_label,
-    xor_label
-])
-
-analysis = []
 
 target = xor_label
+
 for i in range(1000):
     outputs = []
     for j in range(4):
