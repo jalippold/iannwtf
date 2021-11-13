@@ -6,12 +6,14 @@ from tensorflow.keras.layers import Dense
 
 import numpy as np
 
+print("--------------------------------------------------------------------------------------------------------")
+
 ########################
 # Task 1: Dataset
 ########################
 
 # load not working, some issues with anacondas ssl certificates
-test_ds, train_ds = tfds.load('genomics_ood', split=('test[:1000]', 'train[:100000]'), try_gcs=False)
+test_ds, train_ds = tfds.load('genomics_ood', split=('test[:1000]', 'train[:100000]'), try_gcs=False, as_supervised=True)
 
 
 base_to_val = {
@@ -29,20 +31,33 @@ def str_to_onehot(elem):
     elem['seq'] = tf.concat(one_hot, axis=0)
     elem['label'] = tf.one_hot(elem['label'], depth=10, dtype=tf.uint8)
     return elem
+
+def onehotify(tensor, label):
+    vocab ={'A':'1', 'C': '2', 'G':'3', 'T':'0'}
+    for key in vocab.keys():
+        tensor = tf.strings.regex_replace(tensor, key, vocab[key])
+    split = tf.strings.bytes_split(tensor)
+    numbers = tf.cast(tf.strings.to_number(split), tf.uint8)
+    onehot = tf.one_hot(numbers, 4)
+    onehot = tf.reshape(onehot, (-1,))
+    label = tf.one_hot(label, 10)
+    return onehot, label
     
 
 def prepare_genomics_data(data):
     # transform string encoded input and output into one-hot encoding
-    data = data.map(str_to_onehot)
+    data = data.map(onehotify)
     # shuffle, batch and prefetch data
     data = data.cache()
     data = data.shuffle(1000).batch(8).prefetch(20)
     return data
 
-train_ds.apply(prepare_genomics_data)
-test_ds.apply(prepare_genomics_data)
+train_ds = train_ds.apply(prepare_genomics_data)
+test_ds = test_ds.apply(prepare_genomics_data)
 
-
+for elem in train_ds.take(1):
+  img, label = elem
+  print(img.shape, label.shape)
 
 
 ########################
@@ -63,6 +78,7 @@ class MyDense(tf.keras.layers.Layer):
                                     initializer='random_normal',
                                     trainable=True)
 
+    @tf.function
     def call(self, inputs):
         x = tf.matmul(inputs, self.w) + self.b
         x = self.activation(x)
@@ -97,10 +113,10 @@ def test(model, test_data, loss_function):
     test_accuracy_aggregator = []
     test_loss_aggregator = []
 
-    for elem in test_data:
-        prediction = model(elem['seq'])
-        sample_test_loss = loss_function(elem['label'], prediction)
-        sample_test_accuracy =  np.argmax(elem['label'], axis=1) == np.argmax(prediction, axis=1)
+    for input, target in test_data:
+        prediction = model(input)
+        sample_test_loss = loss_function(target, prediction)
+        sample_test_accuracy =  np.argmax(target, axis=1) == np.argmax(prediction, axis=1)
         sample_test_accuracy = np.mean(sample_test_accuracy)
         test_loss_aggregator.append(sample_test_loss.numpy())
         test_accuracy_aggregator.append(np.mean(sample_test_accuracy))
@@ -120,6 +136,7 @@ def train_step(model, input, target, loss_function, optimizer):
     optimizer.apply_gradients(zip(gradients, model.trainable_variables))
     return loss
 
+tf.keras.backend.clear_session()
 
 learning_rate = 0.1
 num_epochs = 10
@@ -149,8 +166,8 @@ for epoch in range(num_epochs):
 
     #training (and checking in with training)
     epoch_loss_agg = []
-    for elem in train_ds:
-        train_loss = train_step(model, elem['seq'], elem['label'], cross_entropy_loss, optimizer)
+    for input, target in train_ds:
+        train_loss = train_step(model, input, target, cross_entropy_loss, optimizer)
         epoch_loss_agg.append(train_loss)
     
     #track training loss
@@ -164,3 +181,16 @@ for epoch in range(num_epochs):
 ########################
 # Task 4: Visualization
 ########################
+
+import matplotlib.pyplot as plt
+
+# Visualize accuracy and loss for training and test data.
+plt.figure()
+line1, = plt.plot(train_losses)
+line2, = plt.plot(test_losses)
+line3, = plt.plot(test_accuracies)
+plt.xlabel("Training steps")
+plt.ylabel("Loss/Accuracy")
+plt.legend((line1,line2, line3),("training","test", "test accuracy"))
+plt.savefig("./fig.pdf")
+plt.show()
