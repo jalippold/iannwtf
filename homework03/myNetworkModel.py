@@ -12,13 +12,10 @@ class MyModel(tf.keras.Model):
         super(MyModel, self).__init__()
         #first hidden layer with 1000 inputs and 256 neurons
         self.dense1 = MyDenseLayer(256)
-        self.dense1.build(num_inputs)
         # second hidden layer with 256 inputs and 256 neurons
         self.dense2 = MyDenseLayer(256)
-        self.dense2.build((1,256))
         # output layer layer with 256 inputs and 10 neurons
         self.out = MyDenseOutputLayer(10)
-        self.out.build((1,256))
 
     def call(self, inputs):
         """
@@ -27,7 +24,7 @@ class MyModel(tf.keras.Model):
         :param inputs: the input tensor of the network
         :return: output of the network
         """
-        x = self.dense1.call(inputs)
-        x = self.dense2.call(x)
-        x = self.out.call(x)
+        x = self.dense1(inputs)
+        x = self.dense2(x)
+        x = self.out(x)
         return x
