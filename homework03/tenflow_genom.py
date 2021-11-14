@@ -95,7 +95,7 @@ if __name__ == "__main__":
     # clean the session
     tf.keras.backend.clear_session()
     # We only take 100.000 training examples and 1000 test_datasets
-    small_prepared_train_dataset = prepared_train_dataset.take(1000)
+    small_prepared_train_dataset = prepared_train_dataset.take(100000)
     small_prepared_test_dataset= prepared_test_dataset.take(1000)
     ### Hyperparameters
     num_epochs = 10
