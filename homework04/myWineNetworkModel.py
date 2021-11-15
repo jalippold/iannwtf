@@ -1,6 +1,5 @@
 import tensorflow as tf
 from MyCustomWineLayer import MyDenseLayer
-from MyCustomWineOutputLayer import MyDenseOutputLayer
 
 # this class represents a model which consists of
 # 2 hidden layers and 1 output layer
