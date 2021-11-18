@@ -20,7 +20,7 @@ class MyModel(tf.keras.Model):
         # https://towardsdatascience.com/understanding-and-implementing-dropout-in-tensorflow-and-keras-a8a3a02c1bfa
         self.dropout = dropout
         if self.dropout:
-            self.dropout_layer = tf.keras.layers.Dropout(rate=dropout_rate)
+            self.dropout_layer = tf.keras.layers.Dropout(rate=dropout_rate, seed=42)
 
     def call(self, inputs, training=None):
         """
