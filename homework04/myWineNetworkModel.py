@@ -7,16 +7,22 @@ from MyCustomWineLayer import MyDenseLayer
 
 class MyModel(tf.keras.Model):
 
-    def __init__(self, num_inputs):
+    def __init__(self, kernel_reg=None, bias_reg=None, dropout=False, dropout_rate= 0.2):
         super(MyModel, self).__init__()
         #first hidden layer with 11 inputs and 64 neurons
-        self.dense1 = MyDenseLayer(32,kernel_regularizer='l1',bias_regularizer='l1')
+        self.dense1 = MyDenseLayer(32,kernel_regularizer=kernel_reg,bias_regularizer=bias_reg)
         # second hidden layer with 64 inputs and 64 neurons
-        self.dense2 = MyDenseLayer(32,kernel_regularizer='l1',bias_regularizer='l1')
+        self.dense2 = MyDenseLayer(32,kernel_regularizer=kernel_reg,bias_regularizer=bias_reg)
         # output layer layer with 64 inputs and 1 neurons
-        self.out = MyDenseLayer(1,kernel_regularizer='l1',bias_regularizer='l1')
+        self.out = MyDenseLayer(1,kernel_regularizer=kernel_reg,bias_regularizer=bias_reg)
 
-    def call(self, inputs):
+        # experimenting with dropout like in:
+        # https://towardsdatascience.com/understanding-and-implementing-dropout-in-tensorflow-and-keras-a8a3a02c1bfa
+        self.dropout = dropout
+        if self.dropout:
+            self.dropout_layer = tf.keras.layers.Dropout(rate=dropout_rate)
+
+    def call(self, inputs, training=None):
         """
         calculates the output of the network for
         the given input
@@ -24,6 +30,10 @@ class MyModel(tf.keras.Model):
         :return: output of the network
         """
         x = self.dense1(inputs)
+        if self.dropout:
+            x = self.dropout_layer(x, training=training)
         x = self.dense2(x)
+        if self.dropout:
+            x = self.dropout_layer(x, training=training)
         x = self.out(x)
         return x

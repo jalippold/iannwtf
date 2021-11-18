@@ -47,7 +47,7 @@ def train_step(model, input, target, loss_function, optimizer):
     """
     # loss_object and optimizer_object are instances of respective tensorflow classes
     with tf.GradientTape() as tape:
-        prediction = model(input)
+        prediction = model(input, training=True)
         loss = loss_function(target, prediction)
     gradients = tape.gradient(loss, model.trainable_variables)
     optimizer.apply_gradients(zip(gradients, model.trainable_variables))
@@ -65,7 +65,7 @@ def test(model, test_data, loss_function):
     test_accuracy_aggregator = []
     test_loss_aggregator = []
     for (input, target) in test_data:
-        prediction = model(input)
+        prediction = model(input, training=False)
         sample_test_loss = loss_function(target, prediction)
         sample_test_accuracy = target == np.round(prediction,0)
         sample_test_accuracy = np.mean(sample_test_accuracy)
@@ -118,7 +118,7 @@ if __name__ == "__main__":
     prepared_train_data = training_dataset.apply(prepare_wine_data)
     prepared_validation_data = validation_dataset.apply(prepare_wine_data)
     # initialize the model; one input layer with 11 inputs
-    model = MyModel((1, 11))
+    model = MyModel()
     # clean the session
     tf.keras.backend.clear_session()
     ### Hyperparameters
@@ -127,8 +127,8 @@ if __name__ == "__main__":
     # Initialize the loss: categorical cross entropy.
     cross_entropy_loss = tf.keras.losses.BinaryCrossentropy()
     # Initialize the optimizer: SGD with default parameters.
-    optimizer = tf.keras.optimizers.SGD(learning_rate, momentum=0.1)
-    #optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+    #optimizer = tf.keras.optimizers.SGD(learning_rate, momentum=0.1)
+    optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
     # Initialize lists for later visualization.
     train_losses = []
     test_losses = []
