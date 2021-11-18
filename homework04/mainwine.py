@@ -118,7 +118,7 @@ if __name__ == "__main__":
     prepared_train_data = training_dataset.apply(prepare_wine_data)
     prepared_validation_data = validation_dataset.apply(prepare_wine_data)
     # initialize the model; one input layer with 11 inputs
-    model = MyModel()
+    models = [MyModel(), MyModel('l1', 'l1', False), MyModel('l2', 'l2', True, 0.1)]
     # clean the session
     tf.keras.backend.clear_session()
     ### Hyperparameters
@@ -126,40 +126,50 @@ if __name__ == "__main__":
     learning_rate = 0.1
     # Initialize the loss: categorical cross entropy.
     cross_entropy_loss = tf.keras.losses.BinaryCrossentropy()
+
     # Initialize the optimizer: SGD with default parameters.
-    #optimizer = tf.keras.optimizers.SGD(learning_rate, momentum=0.1)
-    optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+    optimizers = [
+        tf.keras.optimizers.SGD(learning_rate=learning_rate, momentum=0.1),
+        tf.keras.optimizers.Adam(learning_rate=learning_rate),
+        tf.keras.optimizers.Adagrad(learning_rate=learning_rate)
+    ]
+
     # Initialize lists for later visualization.
-    train_losses = []
-    test_losses = []
-    test_accuracies = []
-    # testing once before we begin
-    test_loss, test_accuracy = test(model, prepared_test_data, cross_entropy_loss)
-    test_losses.append(test_loss)
-    test_accuracies.append(test_accuracy)
-    # check how model performs on train data once before we begin
-    train_loss, _ = test(model, prepared_train_data, cross_entropy_loss)
-    train_losses.append(train_loss)
-    #   We train for num_epochs epochs.
-    for epoch in range(num_epochs):
-        print(f'Epoch: {str(epoch)} starting with accuracy {test_accuracies[-1]}')
-        # training (and checking in with training)
-        epoch_loss_agg = []
-        for input, target in prepared_train_data:
-            train_loss = train_step(model, input, target, cross_entropy_loss, optimizer)
-            epoch_loss_agg.append(train_loss)
-        # track training loss
-        train_losses.append(tf.reduce_mean(epoch_loss_agg))
-        # testing, so we can track accuracy and test loss
-        test_loss, test_accuracy = test(model, prepared_test_data, cross_entropy_loss)
-        test_losses.append(test_loss)
-        test_accuracies.append(test_accuracy)
-    # Visualize accuracy and loss for training and test data.
-    plt.figure()
-    line1, = plt.plot(train_losses)
-    line2, = plt.plot(test_losses)
-    line3, = plt.plot(test_accuracies)
-    plt.xlabel("Training steps")
-    plt.ylabel("Loss/Accuracy")
-    plt.legend((line1, line2, line3), ("training", "test", "test accuracy"))
-    plt.show()
+    train_losses = [[],[],[]]
+    test_losses = [[],[],[]]
+    test_accuracies = [[],[],[]]
+
+    for run in range(3):
+        print(f'Starting evaluation with hyperparameters model {models[run]}; optimizer {optimizers[run]}')
+        # testing once before we begin
+        test_loss, test_accuracy = test(models[run], prepared_test_data, cross_entropy_loss)
+        test_losses[run].append(test_loss)
+        test_accuracies[run].append(test_accuracy)
+        # check how model performs on train data once before we begin
+        train_loss, _ = test(models[run], prepared_train_data, cross_entropy_loss)
+        train_losses[run].append(train_loss)
+        #   We train for num_epochs epochs.
+        for epoch in range(num_epochs):
+            print(f'Epoch: {str(epoch)} starting with accuracy {test_accuracies[run][-1]}')
+            # training (and checking in with training)
+            epoch_loss_agg = []
+            for input, target in prepared_train_data:
+                train_loss = train_step(models[run], input, target, cross_entropy_loss, optimizers[run])
+                epoch_loss_agg.append(train_loss)
+            # track training loss
+            train_losses[run].append(tf.reduce_mean(epoch_loss_agg))
+            # testing, so we can track accuracy and test loss
+            test_loss, test_accuracy = test(models[run], prepared_test_data, cross_entropy_loss)
+            test_losses[run].append(test_loss)
+            test_accuracies[run].append(test_accuracy)
+        # Visualize accuracy and loss for training and test data.
+        plt.figure()
+        line1, = plt.plot(train_losses[run])
+        line2, = plt.plot(test_losses[run])
+        line3, = plt.plot(test_accuracies[run])
+        plt.xlabel("Training steps")
+        plt.ylabel("Loss/Accuracy")
+        plt.legend((line1, line2, line3), ("training", "test", "test accuracy"))
+        plt.show()
+
+    # maybe some more evaluation, data is still in train_losses, test_losses, test_accuracies
