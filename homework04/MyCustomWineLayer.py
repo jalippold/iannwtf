@@ -10,8 +10,8 @@ class MyDenseLayer(tf.keras.layers.Layer):
         super(MyDenseLayer, self).__init__()
         self.units = units
         self.activation = tf.nn.sigmoid
-        self.kernel_regularizer = tf.keras.regularizers.get(kernel_regularizer)
-        self.bias_regularizer = tf.keras.regularizers.get(bias_regularizer)
+        self.kernel_regularizer = kernel_regularizer
+        self.bias_regularizer = bias_regularizer
 
     def build(self, input_shape):
         self.w = self.add_weight(shape=(input_shape[-1], self.units),

@@ -28,7 +28,7 @@ def prepare_wine_data(data_set):
     # cache this progress in memory, as there is no need to redo it; it is deterministic after all
     data_set = data_set.cache()
     # shuffle, batch, prefetch
-    data_set = data_set.shuffle(1000)
+    data_set = data_set.shuffle(5000)
     data_set = data_set.batch(32)
     data_set = data_set.prefetch(20)
     # return preprocessed dataset
@@ -80,7 +80,7 @@ def test(model, test_data, loss_function):
 
 if __name__ == "__main__":
 
-    random_seed = 42
+    random_seed = np.random.randint(9999)
     # read the csv data from file
     wine_data = pd.read_csv('winequality-red.csv', sep=';', header=0)
     print('------')
@@ -117,8 +117,6 @@ if __name__ == "__main__":
     prepared_test_data = test_dataset.apply(prepare_wine_data)
     prepared_train_data = training_dataset.apply(prepare_wine_data)
     prepared_validation_data = validation_dataset.apply(prepare_wine_data)
-    # initialize the model; one input layer with 11 inputs
-    models = [MyModel(), MyModel('l1', 'l1', False), MyModel('l2', 'l2', True, 0.1)]
     # clean the session
     tf.keras.backend.clear_session()
     ### Hyperparameters
@@ -127,19 +125,28 @@ if __name__ == "__main__":
     # Initialize the loss: categorical cross entropy.
     cross_entropy_loss = tf.keras.losses.BinaryCrossentropy()
 
+    # initialize the model; one input layer with 11 inputs
+    models = [
+        MyModel(), 
+        MyModel(tf.keras.regularizers.L1, tf.keras.regularizers.L1, False), 
+        MyModel(tf.keras.regularizers.L1, tf.keras.regularizers.L1, False), 
+        MyModel(tf.keras.regularizers.L2, tf.keras.regularizers.L2, True, 0.5)
+    ]
     # Initialize the optimizer: SGD with default parameters.
     optimizers = [
+        tf.keras.optimizers.SGD(learning_rate=learning_rate, momentum=0.0),
         tf.keras.optimizers.SGD(learning_rate=learning_rate, momentum=0.1),
         tf.keras.optimizers.Adam(learning_rate=learning_rate),
         tf.keras.optimizers.Adagrad(learning_rate=learning_rate)
     ]
 
     # Initialize lists for later visualization.
-    train_losses = [[],[],[]]
-    test_losses = [[],[],[]]
-    test_accuracies = [[],[],[]]
+    train_losses = [[] for i in range(len(optimizers))]
+    test_losses = [[] for i in range(len(optimizers))]
+    test_accuracies = [[] for i in range(len(optimizers))]
 
-    for run in range(3):
+    plt.figure()
+    for run in range(len(optimizers)):
         print(f'Starting evaluation with hyperparameters model {models[run]}; optimizer {optimizers[run]}')
         # testing once before we begin
         test_loss, test_accuracy = test(models[run], prepared_test_data, cross_entropy_loss)
@@ -163,13 +170,13 @@ if __name__ == "__main__":
             test_losses[run].append(test_loss)
             test_accuracies[run].append(test_accuracy)
         # Visualize accuracy and loss for training and test data.
-        plt.figure()
-        line1, = plt.plot(train_losses[run])
-        line2, = plt.plot(test_losses[run])
-        line3, = plt.plot(test_accuracies[run])
-        plt.xlabel("Training steps")
+        plt.subplot(len(optimizers), 1, run+1)
+        line1, = plt.plot(train_losses[run], '-x')
+        line2, = plt.plot(test_losses[run], '-+')
+        line3, = plt.plot(test_accuracies[run], '-o')
         plt.ylabel("Loss/Accuracy")
-        plt.legend((line1, line2, line3), ("training", "test", "test accuracy"))
-        plt.show()
+    plt.legend((line1, line2, line3), ("training loss", "test loss", "test accuracy"))
+    plt.xlabel("Training steps")
+    plt.show()
 
     # maybe some more evaluation, data is still in train_losses, test_losses, test_accuracies

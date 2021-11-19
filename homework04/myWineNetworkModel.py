@@ -10,9 +10,9 @@ class MyModel(tf.keras.Model):
     def __init__(self, kernel_reg=None, bias_reg=None, dropout=False, dropout_rate= 0.2):
         super(MyModel, self).__init__()
         #first hidden layer with 11 inputs and 64 neurons
-        self.dense1 = MyDenseLayer(32,kernel_regularizer=kernel_reg,bias_regularizer=bias_reg)
+        self.dense1 = MyDenseLayer(128,kernel_regularizer=kernel_reg,bias_regularizer=bias_reg)
         # second hidden layer with 64 inputs and 64 neurons
-        self.dense2 = MyDenseLayer(32,kernel_regularizer=kernel_reg,bias_regularizer=bias_reg)
+        self.dense2 = MyDenseLayer(128,kernel_regularizer=kernel_reg,bias_regularizer=bias_reg)
         # output layer layer with 64 inputs and 1 neurons
         self.out = MyDenseLayer(1,kernel_regularizer=kernel_reg,bias_regularizer=bias_reg)
 
@@ -22,7 +22,7 @@ class MyModel(tf.keras.Model):
         if self.dropout:
             self.dropout_layer = tf.keras.layers.Dropout(rate=dropout_rate, seed=42)
 
-    def call(self, inputs, training=None):
+    def call(self, inputs, training=True):
         """
         calculates the output of the network for
         the given input
