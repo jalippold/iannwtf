@@ -177,6 +177,14 @@ if __name__ == "__main__":
         plt.ylabel("Loss/Accuracy")
     plt.legend((line1, line2, line3), ("training loss", "test loss", "test accuracy"))
     plt.xlabel("Training steps")
+    # write data for validation data set to the command line
+    print("Accuracy on validation data set: \n")
+    for run in range(len(optimizers)):
+        test_loss, test_accuracy = test(models[run], prepared_validation_data, cross_entropy_loss)
+        print("""Accuracy on Validation data set: {0} \n for model with number {1}
+        + optimizer {2}""".format(test_accuracy,models[run], optimizers[run]))
+
     plt.show()
 
     # maybe some more evaluation, data is still in train_losses, test_losses, test_accuracies
+    
