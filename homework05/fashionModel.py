@@ -10,13 +10,13 @@ class MyModel(tf.keras.Model):
         super(MyModel, self).__init__()
         #first hidden layer 2DConvoLayer
         self.convo = tf.keras.layers.Conv2D(filters=32, kernel_size=(3,3), strides=(1, 1), padding='same',
-                                            activation='ReLU')
+                                            activation='relu')
         # second hidden layer with pooling
         self.maxpool = tf.keras.layers.MaxPool2D(pool_size=(2, 2), padding='same')
         # layer to flatten the tensors, has no effect on the batch size
         self.flatten = tf.keras.layers.Flatten()
         #third hidden layer; dense layer with 100 neurons
-        self.dense1 = tf.keras.layers.Dense(100,activation='ReLU', use_bias=True)
+        self.dense1 = tf.keras.layers.Dense(100,activation='relu', use_bias=True)
         # outputlayer
         self.out = tf.keras.layers.Dense(10,activation='softmax', use_bias=True)
 
