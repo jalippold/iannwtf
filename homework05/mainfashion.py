@@ -3,7 +3,7 @@ import tensorflow_datasets as tfds
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
-from fashionModel import MyModel
+from fashionModel import MyModel, MyModelTwoConv
 import datetime
 
 def prepare_fashion_mnist_data(fashion_mnist):
@@ -84,13 +84,13 @@ if __name__ == "__main__":
     # Initialize the loss: categorical cross entropy.
     cross_entropy_loss = tf.keras.losses.CategoricalCrossentropy()
     # Initialize the optimizer: SGD with default parameters.
-    optimizer = tf.keras.optimizers.SGD(learning_rate=learning_rate, momentum=0.1)
+    optimizer = tf.keras.optimizers.Adagrad(learning_rate=learning_rate)
     # Initialize lists for later visualization.
     train_losses = []
     test_losses = []
     test_accuracies = []
     #create the model
-    model = MyModel()
+    model = MyModelTwoConv(tf.keras.regularizers.L1L2, tf.keras.regularizers.L1L2)
     # testing once before we begin
     test_loss, test_accuracy = test(model, test_ds, cross_entropy_loss)
     test_losses.append(test_loss)
