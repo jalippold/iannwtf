@@ -1,8 +1,10 @@
+from tensorflow.python.eager.context import num_gpus
 import tensorflow_datasets as tfds
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
-from fashionModel import MyModel
+from fashionModel import MyModel, MyModelTwoConv
+import datetime
 
 def prepare_fashion_mnist_data(fashion_mnist):
     # convert data from uint8 to float32
@@ -17,7 +19,7 @@ def prepare_fashion_mnist_data(fashion_mnist):
     fashion_mnist = fashion_mnist.cache()
     # shuffle, batch, prefetch
     fashion_mnist = fashion_mnist.shuffle(1000)
-    fashion_mnist = fashion_mnist.batch(8)
+    fashion_mnist = fashion_mnist.batch(32)
     fashion_mnist = fashion_mnist.prefetch(20)
     # return preprocessed dataset
     return fashion_mnist
@@ -82,13 +84,13 @@ if __name__ == "__main__":
     # Initialize the loss: categorical cross entropy.
     cross_entropy_loss = tf.keras.losses.CategoricalCrossentropy()
     # Initialize the optimizer: SGD with default parameters.
-    optimizer = tf.keras.optimizers.SGD(learning_rate)
+    optimizer = tf.keras.optimizers.Adagrad(learning_rate=learning_rate)
     # Initialize lists for later visualization.
     train_losses = []
     test_losses = []
     test_accuracies = []
     #create the model
-    model = MyModel()
+    model = MyModelTwoConv(tf.keras.regularizers.L1L2, tf.keras.regularizers.L1L2)
     # testing once before we begin
     test_loss, test_accuracy = test(model, test_ds, cross_entropy_loss)
     test_losses.append(test_loss)
@@ -98,6 +100,7 @@ if __name__ == "__main__":
     train_losses.append(train_loss)
     #   We train for num_epochs epochs.
     for epoch in range(num_epochs):
+        start_time = datetime.datetime.now()
         print(f'Epoch: {str(epoch)} starting with accuracy {test_accuracies[-1]}')
         # training (and checking in with training)
         epoch_loss_agg = []
@@ -110,12 +113,14 @@ if __name__ == "__main__":
         test_loss, test_accuracy = test(model, test_ds, cross_entropy_loss)
         test_losses.append(test_loss)
         test_accuracies.append(test_accuracy)
+        diff_time = datetime.datetime.now() - start_time
+        print(f"Epoch {epoch} took {diff_time} to complete.")
     # Visualize accuracy and loss for training and test data.
     plt.figure()
-    line1, = plt.plot(train_losses)
-    line2, = plt.plot(test_losses)
-    line3, = plt.plot(test_accuracies)
+    line1, = plt.plot(train_losses, '-x')
+    line2, = plt.plot(test_losses, '-+')
+    line3, = plt.plot(test_accuracies, '-o')
     plt.xlabel("Training steps")
     plt.ylabel("Loss/Accuracy")
-    plt.legend((line1, line2, line3), ("training", "test", "test accuracy"))
+    plt.legend((line1, line2, line3), ("training loss", "test loss", "test accuracy"))
     plt.show()
