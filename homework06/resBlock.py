@@ -13,8 +13,11 @@ class MyResBlock(tf.keras.layers.Layer):
         self.mode = mode
         # creating the needed layers
         self.BatchNormal = tf.keras.layers.BatchNormalization()
+        self.BatchNormal2 = tf.keras.layers.BatchNormalization()
+        self.BatchNormal3 = tf.keras.layers.BatchNormalization()
         self.Conv2Din = tf.keras.layers.Conv2D(filters=number_filters, kernel_size =(1, 1))
         self.Conv2Dout = tf.keras.layers.Conv2D(filters=number_out_filters, kernel_size=(1, 1))
+        self.Conv2Dout2 = tf.keras.layers.Conv2D(filters=number_out_filters, kernel_size=(1, 1))
         self.Conv2Dnormal = tf.keras.layers.Conv2D(filters=number_filters, kernel_size =(3, 3), padding="same")
         self.Conv2Dstride = tf.keras.layers.Conv2D(filters=number_filters, kernel_size =(3, 3), padding="same", strides=(2,2))
         self.Conv2Dstrideconstant = tf.keras.layers.Conv2D(filters=number_filters, kernel_size =(3, 3), padding="same")
@@ -29,7 +32,7 @@ class MyResBlock(tf.keras.layers.Layer):
         x_out = self.BatchNormal(inputs)
         x_out = self.Relulayer(x_out)
         x_out = self.Conv2Din(x_out)
-        x_out = self.BatchNormal(x_out)
+        x_out = self.BatchNormal2(x_out)
         x_out = self.Relulayer(x_out)
         if self.mode == "normal":
             x_out = self.Conv2Dnormal(x_out)
@@ -44,11 +47,12 @@ class MyResBlock(tf.keras.layers.Layer):
             x = self.MaxPool(inputs)
         elif self.mode == "constant":
             x_out = self.Conv2Dstrideconstant(x_out)
+            x = inputs
 
         # calculations for all cases
-        x_out = self.BatchNormal(x_out)
+        x_out = self.BatchNormal3(x_out)
         x_out = self.Relulayer(x_out)
-        x_out = self.Conv2Dout(x_out)
+        x_out = self.Conv2Dout2(x_out)
         # Add x and x_out
         x_out = tf.keras.layers.Add()([x_out, x])
         return x_out
