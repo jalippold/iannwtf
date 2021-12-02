@@ -3,6 +3,7 @@ import tensorflow_datasets as tfds
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
+from denseNet import DenseNet
 from resblockmodel import MyResModel
 import datetime
 
@@ -89,7 +90,8 @@ if __name__ == "__main__":
     test_losses = []
     test_accuracies = []
     #create the model
-    model = MyResModel()
+    #model = MyResModel()
+    model = DenseNet()
     # testing once before we begin
     test_loss, test_accuracy = test(model, test_ds, cross_entropy_loss)
     test_losses.append(test_loss)
