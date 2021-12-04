@@ -24,7 +24,7 @@ def prepare_cifar(cifar10):
     # return preprocessed dataset
     return cifar10
 
-
+@tf.function
 def train_step(model, input, target, loss_function, optimizer):
     """
     This function executes a training step on the given network.
@@ -55,12 +55,12 @@ def test(model, test_data, loss_function):
     test_accuracy_aggregator = []
     test_loss_aggregator = []
     for (input, target) in test_data:
-        prediction = model(input)
+        prediction = model(input, training=False)
         sample_test_loss = loss_function(target, prediction)
         sample_test_accuracy =  np.argmax(target, axis=1) == np.argmax(prediction, axis=1)
         sample_test_accuracy = np.mean(sample_test_accuracy)
+        test_accuracy_aggregator.append(sample_test_accuracy)
         test_loss_aggregator.append(sample_test_loss.numpy())
-        test_accuracy_aggregator.append(np.mean(sample_test_accuracy))
 
     test_loss = tf.reduce_mean(test_loss_aggregator)
     test_accuracy = tf.reduce_mean(test_accuracy_aggregator)
@@ -69,6 +69,8 @@ def test(model, test_data, loss_function):
 
 
 if __name__ == "__main__":
+    tf.keras.backend.clear_session()
+    
     # loading the data set
     train_ds, test_ds = tfds.load('cifar10', split=['train', 'test'], as_supervised=True)
     train_ds = train_ds.apply(prepare_cifar)
@@ -80,7 +82,7 @@ if __name__ == "__main__":
     #    break
     ### Hyperparameters
     num_epochs = 30
-    learning_rate = 0.001
+    learning_rate = tf.constant(0.001, dtype=tf.float32)
     # Initialize the loss: categorical cross entropy.
     cross_entropy_loss = tf.keras.losses.CategoricalCrossentropy()
     # Initialize the optimizer: SGD with default parameters.
@@ -90,8 +92,8 @@ if __name__ == "__main__":
     test_losses = []
     test_accuracies = []
     #create the model
-    #model = MyResModel()
-    model = DenseNet()
+    model = MyResModel()
+    # model = DenseNet()
     # testing once before we begin
     test_loss, test_accuracy = test(model, test_ds, cross_entropy_loss)
     test_losses.append(test_loss)

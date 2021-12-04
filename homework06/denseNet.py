@@ -19,12 +19,12 @@ class DenseNet(tf.keras.Model):
         self.dense = tf.keras.layers.Dense(units=128, activation=tf.nn.relu)
         self.out = tf.keras.layers.Dense(units=10, activation=tf.nn.softmax)
 
-
-    def call(self, x):
+    @tf.function
+    def call(self, x, training=False):
         x = self.conv(x)
-        x = self.denseblock1(x)
+        x = self.denseblock1(x, training=training)
         x = self.trans1(x)
-        x = self.denseblock2(x)
+        x = self.denseblock2(x, training=training)
         x = self.trans2(x)
         x = self.flatten(x)
         x = self.dense(x)

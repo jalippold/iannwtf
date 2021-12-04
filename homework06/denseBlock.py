@@ -1,4 +1,5 @@
 import tensorflow as tf
+from tensorflow.python.keras.engine import training
 
 
 class DenseBlock(tf.keras.layers.Layer):
@@ -31,12 +32,12 @@ class DenseBlock(tf.keras.layers.Layer):
         self.concat = tf.keras.layers.Concatenate(axis=-1)
 
 
-
-    def call(self, inputs):
+    @tf.function
+    def call(self, inputs, training):
         dout = inputs
 
         for i in range(self.dense_depth):
-            dout = self.batchnorms[i](dout)
+            dout = self.batchnorms[i](dout, training=training)
             dout = self.activations[i](dout)
             dout = self.dconvs[i](dout)
 

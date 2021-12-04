@@ -22,7 +22,7 @@ class MyResModel(tf.keras.Model):
         self.out = tf.keras.layers.Dense(10, activation='softmax')
 
     @tf.function
-    def call(self, inputs):
+    def call(self, inputs, training=False):
         """
         calculates the output of the network for
         the given input
@@ -30,9 +30,9 @@ class MyResModel(tf.keras.Model):
         :return: output of the network
         """
         x = self.Conv2D_initial(inputs)
-        x = self.res_normal(x)
-        x = self.res_strided(x)
-        x = self.res_constant(x)
+        x = self.res_normal(x, training=training)
+        x = self.res_strided(x, training=training)
+        x = self.res_constant(x, training=training)
         x = self.pooling_layer(x)
         x = self.out(x)
         return x

@@ -27,12 +27,12 @@ class MyResBlock(tf.keras.layers.Layer):
 
 
     @tf.function
-    def call(self, inputs):
+    def call(self, inputs, training=False):
         # use batch normalization and a non-linearity (relu)
-        x_out = self.BatchNormal(inputs)
+        x_out = self.BatchNormal(inputs, training=training)
         x_out = self.Relulayer(x_out)
         x_out = self.Conv2Din(x_out)
-        x_out = self.BatchNormal2(x_out)
+        x_out = self.BatchNormal2(x_out, training=training)
         x_out = self.Relulayer(x_out)
         if self.mode == "normal":
             x_out = self.Conv2Dnormal(x_out)
@@ -40,7 +40,7 @@ class MyResBlock(tf.keras.layers.Layer):
             x = self.Conv2Dout(inputs)
         elif self.mode == "strided":
             # set number of output channels to match number of input channels (else we need a 1x1 convolution)
-            #TODO out_filters = inputs.shape[-1]
+            out_filters = inputs.shape[-1]
             # do strided convolution (reducing feature map size)
             x_out = self.Conv2Dstride(x_out)
             # transform original input with 1x1 strided max pooling to match output shape
@@ -50,7 +50,7 @@ class MyResBlock(tf.keras.layers.Layer):
             x = inputs
 
         # calculations for all cases
-        x_out = self.BatchNormal3(x_out)
+        x_out = self.BatchNormal3(x_out, training=training)
         x_out = self.Relulayer(x_out)
         x_out = self.Conv2Dout2(x_out)
         # Add x and x_out
