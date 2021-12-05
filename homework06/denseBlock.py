@@ -33,11 +33,11 @@ class DenseBlock(tf.keras.layers.Layer):
 
 
     @tf.function
-    def call(self, inputs, training):
+    def call(self, inputs):
         dout = inputs
 
         for i in range(self.dense_depth):
-            dout = self.batchnorms[i](dout, training=training)
+            dout = self.batchnorms[i](dout)
             dout = self.activations[i](dout)
             dout = self.dconvs[i](dout)
 

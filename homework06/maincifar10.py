@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from denseNet import DenseNet
 from resblockmodel import MyResModel
 import datetime
+import argparse
 
 
 def prepare_cifar(cifar10):
@@ -69,6 +70,11 @@ def test(model, test_data, loss_function):
 
 
 if __name__ == "__main__":
+    #parse arguments to determine which model should be used
+    parser = argparse.ArgumentParser(description='ResNet or DenseNet')
+    parser.add_argument('--model', type=str, help='ResNet of DenseNet', required=True)
+    args = parser.parse_args()
+
     tf.keras.backend.clear_session()
     
     # loading the data set
@@ -91,9 +97,15 @@ if __name__ == "__main__":
     train_losses = []
     test_losses = []
     test_accuracies = []
+
     #create the model
-    model = MyResModel()
-    # model = DenseNet()
+    if args.model == 'ResNet':
+        model = MyResModel()
+    elif args.model == 'DenseNet':
+        model = DenseNet()
+    else:
+        raise ValueError("Invalid model passed in as argument. Should be either ResNet or DenseNet!")
+
     # testing once before we begin
     test_loss, test_accuracy = test(model, test_ds, cross_entropy_loss)
     test_losses.append(test_loss)
@@ -118,8 +130,10 @@ if __name__ == "__main__":
         test_accuracies.append(test_accuracy)
         diff_time = datetime.datetime.now() - start_time
         print(f"Epoch {epoch} took {diff_time} to complete.")
+
+    print(model.summary())
     # Visualize accuracy and loss for training and test data.
-    plt.figure()
+    plt.subplot(1, 1, 1)
     line1, = plt.plot(train_losses, '-x')
     line2, = plt.plot(test_losses, '-+')
     line3, = plt.plot(test_accuracies, '-o')

@@ -1,4 +1,5 @@
 import tensorflow as tf
+from tensorflow.python.keras.engine import training
 
 ########################################################
 
@@ -15,14 +16,14 @@ class TransitionLayer(tf.keras.layers.Layer):
     def __init__(self, num_filters, pooling_strides):
         super(TransitionLayer, self).__init__()
 
-        self.conv = tf.keras.layers.Conv2D(filters=num_filters, kernel_size=(1,1))
         self.batchnorm = tf.keras.layers.BatchNormalization()
         self.activation = tf.keras.layers.Activation(tf.nn.relu)
-        self.pooling = tf.keras.layers.AveragePooling2D(strides=pooling_strides)
+        self.conv = tf.keras.layers.Conv2D(filters=num_filters, kernel_size=(1,1), use_bias=False)
+        self.pooling = tf.keras.layers.AveragePooling2D(strides=pooling_strides, pool_size=(2,2))
 
     
     def call(self, inputs):
-        inputs = self.conv(inputs)
         inputs = self.batchnorm(inputs)
         inputs = self.activation(inputs)
+        inputs = self.conv(inputs)
         return self.pooling(inputs)

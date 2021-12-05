@@ -13,16 +13,21 @@ class MyResBlock(tf.keras.layers.Layer):
         self.mode = mode
         # creating the needed layers
         self.BatchNormal = tf.keras.layers.BatchNormalization()
-        self.BatchNormal2 = tf.keras.layers.BatchNormalization()
-        self.BatchNormal3 = tf.keras.layers.BatchNormalization()
-        self.Conv2Din = tf.keras.layers.Conv2D(filters=number_filters, kernel_size =(1, 1))
-        self.Conv2Dout = tf.keras.layers.Conv2D(filters=number_out_filters, kernel_size=(1, 1))
-        self.Conv2Dout2 = tf.keras.layers.Conv2D(filters=number_out_filters, kernel_size=(1, 1))
-        self.Conv2Dnormal = tf.keras.layers.Conv2D(filters=number_filters, kernel_size =(3, 3), padding="same")
-        self.Conv2Dstride = tf.keras.layers.Conv2D(filters=number_filters, kernel_size =(3, 3), padding="same", strides=(2,2))
-        self.Conv2Dstrideconstant = tf.keras.layers.Conv2D(filters=number_filters, kernel_size =(3, 3), padding="same")
-        self.MaxPool = tf.keras.layers.MaxPool2D(pool_size=(1, 1), strides=(2, 2))
         self.Relulayer = tf.keras.layers.Activation(tf.nn.relu)
+        self.Conv2Din = tf.keras.layers.Conv2D(filters=number_filters, kernel_size =(1, 1))
+        self.BatchNormal2 = tf.keras.layers.BatchNormalization()
+        
+        if self.mode == "normal":
+            self.Conv2Dnormal = tf.keras.layers.Conv2D(filters=number_filters, kernel_size =(3, 3), padding="same")
+            self.Conv2Dout = tf.keras.layers.Conv2D(filters=number_out_filters, kernel_size=(1, 1))
+        elif self.mode == "strided":
+            self.Conv2Dstride = tf.keras.layers.Conv2D(filters=number_filters, kernel_size =(3, 3), padding="same", strides=(2,2))
+            self.MaxPool = tf.keras.layers.MaxPool2D(pool_size=(1, 1), strides=(2, 2))
+        elif self.mode == "constant":
+            self.Conv2Dstrideconstant = tf.keras.layers.Conv2D(filters=number_filters, kernel_size =(3, 3), padding="same")
+
+        self.BatchNormal3 = tf.keras.layers.BatchNormalization()
+        self.Conv2Dout2 = tf.keras.layers.Conv2D(filters=number_out_filters, kernel_size=(1, 1))
 
 
 
