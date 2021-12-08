@@ -4,9 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import datetime
 import argparse
-
-SEQ_LEN = 3
-NUM_SAMPLES = 3
+from MyModel import LSTMModel
+SEQ_LEN = 10
+NUM_SAMPLES = 5
 
 MIN_VAL = -1
 MAX_VAL = 1
@@ -77,6 +77,7 @@ def test(model, test_data, loss_function):
     test_accuracy_aggregator = []
     test_loss_aggregator = []
     for (input, target) in test_data:
+        print(input)
         prediction = model(input, training=False)
         sample_test_loss = loss_function(target, prediction)
         sample_test_accuracy =  np.argmax(target, axis=1) == np.argmax(prediction, axis=1)
@@ -92,9 +93,9 @@ def test(model, test_data, loss_function):
 
 if __name__ == "__main__":
     #parse arguments to determine which model should be used
-    parser = argparse.ArgumentParser(description='ResNet or DenseNet')
-    parser.add_argument('--model', type=str, help='ResNet of DenseNet', required=True)
-    args = parser.parse_args()
+    #parser = argparse.ArgumentParser(description='ResNet or DenseNet')
+    #parser.add_argument('--model', type=str, help='ResNet of DenseNet', required=True)
+    #args = parser.parse_args()
 
     tf.keras.backend.clear_session()
     
@@ -124,8 +125,8 @@ if __name__ == "__main__":
     test_accuracies = []
 
     #create the model: TODO!
-    model = None
-
+    hidden_state_size = 1000
+    model = LSTMModel(units=hidden_state_size, batchsize = 64)
     # testing once before we begin
     test_loss, test_accuracy = test(model, test_ds, cross_entropy_loss)
     test_losses.append(test_loss)
