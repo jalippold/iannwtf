@@ -5,17 +5,17 @@ import matplotlib.pyplot as plt
 import datetime
 import argparse
 from MyModel import LSTMModel
-SEQ_LEN = 10
-NUM_SAMPLES = 5
+SEQ_LEN = 5
+NUM_SAMPLES = 64
 
 MIN_VAL = -1
 MAX_VAL = 1
 
 def integration_task(seq_len, num_samples):
     for i in range(num_samples):
-        input = tf.random.uniform(shape=(seq_len,), minval=MIN_VAL, maxval=MAX_VAL, dtype=tf.float32)
-        target = 1 if tf.math.reduce_sum(input, axis=-1) > 0 else 0
-        yield (input, tf.constant(target, dtype=tf.float32))
+        input = tf.random.uniform(shape=(seq_len,1), minval=MIN_VAL, maxval=MAX_VAL, dtype=tf.float32)
+        target = 1 if tf.math.reduce_sum(input, axis=0) > 0 else 0
+        yield (input, tf.constant(target, dtype=tf.float32,shape=(1,)))
 
 
 def my_integration_task():
@@ -101,12 +101,14 @@ if __name__ == "__main__":
     
     # loading the data set
     train_ds = tf.data.Dataset.from_generator(my_integration_task, 
-            output_signature=(tf.TensorSpec(shape=(SEQ_LEN,), dtype=tf.float32), tf.TensorSpec(shape=(), dtype=tf.float32)))
+            output_signature=(tf.TensorSpec(shape=(SEQ_LEN,1), dtype=tf.float32), tf.TensorSpec(shape=(1,), dtype=tf.float32))).batch(64)
     test_ds = tf.data.Dataset.from_generator(my_integration_task, 
-            output_signature=(tf.TensorSpec(shape=(SEQ_LEN,), dtype=tf.float32), tf.TensorSpec(shape=(), dtype=tf.float32)))
+            output_signature=(tf.TensorSpec(shape=(SEQ_LEN,1), dtype=tf.float32), tf.TensorSpec(shape=(1,), dtype=tf.float32))).batch(64)
     
-    train_ds = train_ds.apply(prepare_myds)
-    test_ds = test_ds.apply(prepare_myds)
+    #train_ds = train_ds.apply(prepare_myds)
+    #train_ds.batch(64)
+    #test_ds = test_ds.apply(prepare_myds)
+    #test_ds.batch(64)
     #print(train_ds.take(1))
     # test preprocessing
     #for elem in train_ds:
