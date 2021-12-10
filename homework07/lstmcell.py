@@ -5,6 +5,7 @@ class LSTM_Cell(tf.keras.layers.Layer):
     def __init__(self, units):
         super(LSTM_Cell, self).__init__()
         self.units = units
+        # special initializer for the forget gates
         self.forget_dense = tf.keras.layers.Dense(units=units, activation=tf.nn.sigmoid, bias_initializer='ones')
         self.input_dense = tf.keras.layers.Dense(units=units, activation=tf.nn.sigmoid)
         self.csc_dense = tf.keras.layers.Dense(units=units, activation=tf.nn.tanh)
