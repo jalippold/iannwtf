@@ -25,9 +25,9 @@ class LSTM_Layer(tf.keras.layers.Layer):
             states.append(ret)
             # for dim in range batch_size
             for dim in range(input_shape[0]):
-                outputs[dim][t] = states[-1][0]
+                outputs[dim][t] = states[-1][0][dim]
         
-        return outputs
+        return tf.convert_to_tensor(outputs, dtype=tf.float32)
 
     
     def zero_states(self, batch_size):

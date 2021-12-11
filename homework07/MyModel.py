@@ -17,13 +17,6 @@ class LSTMModel(tf.keras.Model):
         first_states = self.lstmLayer.zero_states(self.batchsize)
         x = self.embedding(data)
         x = self.lstmLayer(x=x, states=first_states)
-        print('before')
-        print(type(x))
-        print(type(x[:][-1]))
-        print(len(x[:][-1]))
-        x = x[:][-1]
-        x = tf.slice(x,[0,4,0],[-1,-1,-1])
-        print(x)
-        print('after')
+        x = x[:,-1,:]
         x = self.out(x)
         return x
