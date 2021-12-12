@@ -6,7 +6,7 @@ import datetime
 import argparse
 from MyModel import LSTMModel
 SEQ_LEN = 25
-NUM_SAMPLES = 400
+NUM_SAMPLES = 80000
 
 MIN_VAL = -1
 MAX_VAL = 1
@@ -22,7 +22,6 @@ def my_integration_task():
     for data in integration_task(SEQ_LEN, NUM_SAMPLES):
         yield data
 
-# (seq_len)(3)
 
 #ds = tf.data.Dataset.from_generator(my_integration_task, output_signature=(tf.TensorSpec(shape=(SEQ_LEN,), dtype=tf.float32), tf.TensorSpec(shape=(), dtype=tf.float32)))
 
@@ -107,17 +106,7 @@ if __name__ == "__main__":
             output_signature=(tf.TensorSpec(shape=(SEQ_LEN,1), dtype=tf.float32), tf.TensorSpec(shape=(1), dtype=tf.float32)))
     train_ds = train_ds.apply(prepare_myds)
     test_ds = test_ds.apply(prepare_myds)
-    #print(test_ds.take(10))
-    #print(train_ds.take(10))
-    #train_ds = train_ds.apply(prepare_myds)
-    #train_ds.batch(64)
-    #test_ds = test_ds.apply(prepare_myds)
-    #test_ds.batch(64)
-    #print(train_ds.take(1))
-    # test preprocessing
-    #for elem in train_ds:
-    #    print(elem)
-    #    break
+
     ### Hyperparameters
     num_epochs = 30
     learning_rate = tf.constant(0.001, dtype=tf.float32)

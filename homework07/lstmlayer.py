@@ -34,12 +34,12 @@ class LSTM_Layer(tf.keras.layers.Layer):
         return (tf.zeros(shape=(batch_size, self.cell.units)), tf.zeros(shape=(batch_size, self.cell.units)))
 
 
-BATCH_SIZE = 2
-SEQ_LEN = 3
-INPUT_UNITS = 16
+# BATCH_SIZE = 2
+# SEQ_LEN = 3
+# INPUT_UNITS = 16
 
-cell = LSTM_Cell(8)
-layer = LSTM_Layer(cell)
+# cell = LSTM_Cell(8)
+# layer = LSTM_Layer(cell)
 
 #x = tf.random.uniform(shape=(BATCH_SIZE, SEQ_LEN, INPUT_UNITS), minval=-1, maxval=1)
 #print(x)
