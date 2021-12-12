@@ -11,7 +11,7 @@ class LSTM_Cell(tf.keras.layers.Layer):
         self.csc_dense = tf.keras.layers.Dense(units=units, activation=tf.nn.tanh)
         self.output_dense = tf.keras.layers.Dense(units=units, activation=tf.nn.sigmoid)
 
-
+    @tf.function
     def call(self, x, states):
         # states first dimension should have 2 elements
         # states[0] -> hidden state, states[1] -> cell state

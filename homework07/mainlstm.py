@@ -45,7 +45,7 @@ def prepare_myds(myds):
     return myds
 
 
-#@tf.function
+@tf.function
 def train_step(model, input, target, loss_function, optimizer):
     """
     This function executes a training step on the given network.

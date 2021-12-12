@@ -10,26 +10,31 @@ class LSTM_Layer(tf.keras.layers.Layer):
 
     # input here over multiple time steps
     # and returns output over multiple time steps
+    @tf.function
     def call(self, x, states):
         # input should have (batch_size, seq_len, input_size]
-        input_shape = tf.shape(x)
-        states = [states]
-        # creates a list which contains batch_size times lists
-        # with the length of seq_len
-        outputs = [[None for t in range(input_shape[1])] for batch in range(input_shape[0])]
+        input_shape = x.shape
+
+        cell_states = tf.TensorArray(dtype=tf.float32, size=input_shape[1]+1) 
+        hidden_states = tf.TensorArray(dtype=tf.float32, size=input_shape[1]+1)
+
+        hstate = states[0]
+        cstate = states[1]
+        hidden_states =  hidden_states.write(0, hstate)
+        cell_states = cell_states.write(0, cstate)
 
         # for t in range(seq_len)
         for t in range(input_shape[1]):
             # x[:,t,:] --> input at time t + input last state [hidden state, cell state]
-            ret = self.cell(x[:,t,:], states[-1])
-            states.append(ret)
-            # for dim in range batch_size
-            for dim in range(input_shape[0]):
-                outputs[dim][t] = states[-1][0][dim]
-        
-        return tf.convert_to_tensor(outputs, dtype=tf.float32)
+            hstate, cstate = self.cell(x[:,t,:], (hstate, cstate))
+            
+            # states.append(ret)
+            hidden_states = hidden_states.write(t+1, hstate)
+            cell_states = cell_states.write(t+1, cstate)
 
-    
+        return hstate
+
+    @tf.function
     def zero_states(self, batch_size):
         return (tf.zeros(shape=(batch_size, self.cell.units)), tf.zeros(shape=(batch_size, self.cell.units)))
 
