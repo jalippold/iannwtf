@@ -39,6 +39,8 @@ def prepare_for_embedding_test(dataset):
     dataset = dataset.cache()
     # convert data from uint8 to float32
     dataset = dataset.map(lambda img, target: (tf.cast(img, tf.float32), target))
+    # change target to original image
+    #dataset = dataset.map(lambda img, target: (img, img))
     # sloppy input normalization, just bringing image values from range [0, 255] to [-1, 1]
     dataset = dataset.map(lambda img, target: ((img / 128.) - 1., target))
     # add noise
@@ -184,9 +186,14 @@ if __name__ == "__main__":
     counter_embedding = 0
     embedding_list = []
     embedding_target_list =[]
+    target_counter = 0
+    target_list = []
     for (input,target) in test_ds_embedding:
         # think of batching
         if counter_embedding < 16:
+            if target_counter <= 1:
+              target_list.append(input)
+              target_counter += 1
             embedding_list.append(model.encoder(input))
             embedding_target_list.append(target)
         else:
@@ -202,8 +209,8 @@ if __name__ == "__main__":
             current_slice = tf.slice(embedding_list[i], [j,0], [1,10])
             single_embedding_list.append(tf.squeeze(current_slice))
             single_label_list.append(tf.slice(embedding_target_list[i], [j], [1]))
-    print(len(single_embedding_list))
-    print(len(single_label_list))
+    #print(len(single_embedding_list))
+    #print(len(single_label_list))
     array_embedding_list = np.asarray(single_embedding_list)
     #print(array_embedding_list)
     print(array_embedding_list.shape)
@@ -218,24 +225,37 @@ if __name__ == "__main__":
     reconstructed_image2 = model.decoder(tf.expand_dims(secondimage_embedding, axis=0))
     f = interp1d(firstimage_embedding, secondimage_embedding, kind='linear', fill_value="extrapolate")
     print(f)
-    x = np.linspace(min(firstimage_embedding + secondimage_embedding), max(firstimage_embedding + secondimage_embedding ), num=100, endpoint=True)
+    x = np.linspace(0, 1, num=10, endpoint=True)
     for i in range(len(X_embedded)):
         #print(X_embedded[i][0])
         #print(X_embedded[i][1])
         #print(single_label_list[i].numpy()[0])
         #print(colors[single_label_list[i].numpy()[0]])
         ax.scatter(X_embedded[i][0], X_embedded[i][1], color=colors[single_label_list[i].numpy()[0]])
-    plt.plot(x,f(x), 'mx')
+    #plt.plot(x,f(x), 'mx')
     plt.show()
     for i in range(0,len(colors)):
       print('{:d} : {:s}'.format(i, colors[i]))
-    print('------------------just interpolation plot to detect it------------------------------------------')
-    plt.plot(x,f(x), 'mx')
-    plt.show()
+    print('------------------interpolation------------------------------------------')
     print('------------------interpolation images------------------------------------------')
-    print("first reconstructed image")
-    plt.imshow(tf.squeeze(tf.slice(reconstructed_image1,[0,0,0,0],[1,28,28,1])), cmap='gray')
+    print("start image target")
+    plt.imshow(tf.squeeze(tf.slice(target_list[0],[0,0,0,0],[1,28,28,1])), cmap='gray')
     plt.show()
-    print("second reconstructed image")
-    plt.imshow(tf.squeeze(tf.slice(reconstructed_image2,[0,0,0,0],[1,28,28,1])), cmap='gray')
+    print("seconde image")
+    plt.imshow(tf.squeeze(tf.slice(target_list[1],[0,0,0,0],[1,28,28,1])), cmap='gray')
     plt.show()
+    #TODO print start image
+    for i in range(0,len(x)):
+      print("---------------Decoding number "+ str(i) +"---------------")
+      #print(x[i])
+      #print(model.decoder(tf.expand_dims(x[i]*firstimage_embedding + (1-x[i])*secondimage_embedding,axis=0)))
+      plt.imshow(tf.squeeze(model.decoder(tf.expand_dims(x[i]*firstimage_embedding + (1-x[i])*secondimage_embedding,axis=0))), cmap='gray')
+      plt.show()
+    print( "---- last target image --------------")
+    plt.imshow(tf.squeeze(tf.slice(target_list[1],[0,0,0,0],[1,28,28,1])),cmap='gray')
+    plt.show()
+    #plt.imshow(tf.squeeze(tf.slice(reconstructed_image1,[0,0,0,0],[1,28,28,1])), cmap='gray')
+    #plt.show()
+    #print("second reconstructed image")
+    #plt.imshow(tf.squeeze(tf.slice(reconstructed_image2,[0,0,0,0],[1,28,28,1])), cmap='gray')
+    #plt.show()
