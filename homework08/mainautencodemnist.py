@@ -6,6 +6,7 @@ import datetime
 import tensorflow_datasets as tfds
 from sklearn.manifold import TSNE
 from scipy.interpolate import interp1d
+from AutoencoderModel import AutoEncoderModel
 
 def prepare_mnist(dataset):
     # we don't have to do that much, we build the dataset like we want it...
