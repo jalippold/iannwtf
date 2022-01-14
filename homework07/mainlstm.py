@@ -5,15 +5,15 @@ import matplotlib.pyplot as plt
 import datetime
 import argparse
 from MyModel import LSTMModel
-SEQ_LEN = 5
-NUM_SAMPLES = 64
+SEQ_LEN = 25
+NUM_SAMPLES = 80000
 
 MIN_VAL = -1
 MAX_VAL = 1
 
 def integration_task(seq_len, num_samples):
     for i in range(num_samples):
-        input = tf.random.uniform(shape=(seq_len,1), minval=MIN_VAL, maxval=MAX_VAL, dtype=tf.float32)
+        input = tf.random.uniform(shape=(seq_len, 1), minval=MIN_VAL, maxval=MAX_VAL, dtype=tf.float32)
         target = 1 if tf.math.reduce_sum(input, axis=0) > 0 else 0
         yield (input, tf.constant(target, dtype=tf.float32,shape=(1)))
 
@@ -79,7 +79,8 @@ def test(model, test_data, loss_function):
         #print(input)
         prediction = model(input, training=False)
         sample_test_loss = loss_function(target, prediction)
-        sample_test_accuracy =  np.argmax(target, axis=1) == np.argmax(prediction, axis=1)
+        sample_test_accuracy = target == np.round(prediction)
+        #print(sample_test_accuracy)
         sample_test_accuracy = np.mean(sample_test_accuracy)
         test_accuracy_aggregator.append(sample_test_accuracy)
         test_loss_aggregator.append(sample_test_loss.numpy())
@@ -105,22 +106,12 @@ if __name__ == "__main__":
             output_signature=(tf.TensorSpec(shape=(SEQ_LEN,1), dtype=tf.float32), tf.TensorSpec(shape=(1), dtype=tf.float32)))
     train_ds = train_ds.apply(prepare_myds)
     test_ds = test_ds.apply(prepare_myds)
-    #print(test_ds.take(10))
-    #print(train_ds.take(10))
-    #train_ds = train_ds.apply(prepare_myds)
-    #train_ds.batch(64)
-    #test_ds = test_ds.apply(prepare_myds)
-    #test_ds.batch(64)
-    #print(train_ds.take(1))
-    # test preprocessing
-    #for elem in train_ds:
-    #    print(elem)
-    #    break
+
     ### Hyperparameters
     num_epochs = 30
     learning_rate = tf.constant(0.001, dtype=tf.float32)
     # Initialize the loss: categorical cross entropy.
-    cross_entropy_loss = tf.keras.losses.CategoricalCrossentropy()
+    cross_entropy_loss = tf.keras.losses.BinaryCrossentropy()
     # Initialize the optimizer: SGD with default parameters.
     optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
     # Initialize lists for later visualization.
