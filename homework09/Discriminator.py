@@ -14,16 +14,14 @@ class Discriminator(tf.keras.Model):
                                                      input_shape=[28, 28, 1]))
         self.net_layers.append(tf.keras.layers.LeakyReLU())
         self.net_layers.append(tf.keras.layers.Dropout(0.3))
-        self.net_layers.append(
-            tf.keras.layers.Conv2D(128, (5, 5), strides=(2, 2), padding='same'))
+        self.net_layers.append(tf.keras.layers.Conv2D(128, (5, 5), strides=(2, 2), padding='same'))
         self.net_layers.append(tf.keras.layers.LeakyReLU())
         self.net_layers.append(tf.keras.layers.Dropout(0.3))
         self.net_layers.append(tf.keras.layers.Flatten())
         # Dense classification layer
-        self.net_layers.append(tf.keras.layers.Dense(1))
+        self.net_layers.append(tf.keras.layers.Dense(1, activation=tf.keras.activations.sigmoid))
 
-    # should return positive values for real images and negative values for
-    # fake images
+    # should return values near1 for real images and 0 for fake images
     @tf.function
     def call(self, inputs, training):
         """
@@ -34,5 +32,5 @@ class Discriminator(tf.keras.Model):
         :return: output of the network
         """
         for layer in self.net_layers:
-            inputs = layer(inputs)
+            inputs = layer(inputs, training=training)
         return inputs
