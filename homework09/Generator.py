@@ -11,19 +11,22 @@ class Generator(tf.keras.Model):
 
         self.net_layers = []
         # initial Dense-Layer
-        self.net_layers.append(tf.keras.layers.Dense(7*7*256, use_bias=True, input_shape=(input_dim,)))
+        self.net_layers.append(tf.keras.layers.Dense(7*7*128, use_bias=True, input_shape=(input_dim,)))
         self.net_layers.append(tf.keras.layers.BatchNormalization())
         self.net_layers.append(tf.keras.layers.LeakyReLU())
-        self.net_layers.append(tf.keras.layers.Reshape((7,7,256)))
+        self.net_layers.append(tf.keras.layers.Reshape((7,7,128)))
         # use upsampling
-        self.net_layers.append(tf.keras.layers.Conv2DTranspose(128, (6, 6), strides=(2, 2), padding='same', use_bias=True)) # hints state that Conv2DTrans might work better with even kernel-size
+        self.net_layers.append(tf.keras.layers.Conv2DTranspose(256, (4, 4), strides=(2, 2), padding='same', use_bias=True)) # hints state that Conv2DTrans might work better with even kernel-size
         self.net_layers.append(tf.keras.layers.BatchNormalization())
         self.net_layers.append(tf.keras.layers.LeakyReLU())
-        self.net_layers.append(tf.keras.layers.Conv2DTranspose(64, (6, 6), strides=(2, 2), padding='same', use_bias=True)) # hints state that Conv2DTrans might work better with even kernel-size
+        self.net_layers.append(tf.keras.layers.Conv2D(128, (3, 3), strides=(1, 1), padding='same', use_bias=True))
+        self.net_layers.append(tf.keras.layers.BatchNormalization())
+        self.net_layers.append(tf.keras.layers.LeakyReLU())
+        self.net_layers.append(tf.keras.layers.Conv2DTranspose(64, (4, 4), strides=(2, 2), padding='same', use_bias=True)) # hints state that Conv2DTrans might work better with even kernel-size
         self.net_layers.append(tf.keras.layers.BatchNormalization())
         self.net_layers.append(tf.keras.layers.LeakyReLU())
         # last convlayer with tanh
-        self.net_layers.append(tf.keras.layers.Conv2D(1, (5, 5), strides=(1, 1), padding='same', use_bias=True, activation='tanh'))
+        self.net_layers.append(tf.keras.layers.Conv2D(1, (3, 3), strides=(1, 1), padding='same', use_bias=True, activation='tanh'))
 
         self.optimizer = tf.keras.optimizers.Adam(1e-2)
         self.loss = tf.keras.losses.BinaryCrossentropy(from_logits=True)
@@ -32,7 +35,7 @@ class Generator(tf.keras.Model):
                         # tf.keras.metrics.BinaryAccuracy, 
                         ]
     @tf.function
-    def call(self, inputs, training):
+    def call(self, inputs, training=False):
         """
         calculates the output of the network for
         the given input
@@ -65,23 +68,23 @@ class Generator(tf.keras.Model):
         
         # for all metrics except loss, update states (accuracy etc.)
         for metric in self.metrics_list[1:]:
-            metric.update_state(fake_targets, fake_output)
+            metric.update_state(y_true=fake_targets, y_pred=fake_output)
 
         # Return a dictionary mapping metric names to current value
         return ({m.name: m.result() for m in self.metrics_list}, generated_images)
 
-    # @tf.function
-    # def test_step(self, data):
+    @tf.function
+    def test_step(self, noise, discriminator):
 
-    #     x, targets = data
-        
-    #     predictions = self(x, training=False)
-        
-    #     loss = self.loss_function(targets, predictions) + tf.reduce_sum(self.losses)
-        
-    #     self.metrics_list[0].update_state(loss)
-        
-    #     for metric in self.metrics_list[1:]:
-    #         metric.update_state(targets, predictions)
+        generated_images = self(noise, training=False)
+        fake_output = discriminator(generated_images, training=False)
+        fake_targets = tf.ones_like(fake_output)
 
-    #     return {m.name: m.result() for m in self.metrics_list}
+        total_loss = self.loss(fake_targets, fake_output)
+        
+        self.metrics_list[0].update_state(total_loss)
+        
+        for metric in self.metrics_list[1:]:
+            metric.update_state(y_true=fake_targets, y_pred=fake_output)
+
+        return ({m.name: m.result() for m in self.metrics_list}, generated_images)
