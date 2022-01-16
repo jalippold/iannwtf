@@ -9,26 +9,42 @@ class Generator(tf.keras.Model):
     def __init__(self, input_dim=100):
         super(Generator, self).__init__()
 
+        # self.net_layers = []
+        # # initial Dense-Layer
+        # self.net_layers.append(tf.keras.layers.Dense(7*7*128, use_bias=True, input_shape=(input_dim,)))
+        # self.net_layers.append(tf.keras.layers.BatchNormalization())
+        # self.net_layers.append(tf.keras.layers.LeakyReLU())
+        # self.net_layers.append(tf.keras.layers.Reshape((7,7,128)))
+        # # use upsampling
+        # self.net_layers.append(tf.keras.layers.Conv2DTranspose(256, (4, 4), strides=(2, 2), padding='same', use_bias=True)) # hints state that Conv2DTrans might work better with even kernel-size
+        # self.net_layers.append(tf.keras.layers.BatchNormalization())
+        # self.net_layers.append(tf.keras.layers.LeakyReLU())
+        # self.net_layers.append(tf.keras.layers.Conv2D(128, (3, 3), strides=(1, 1), padding='same', use_bias=True))
+        # self.net_layers.append(tf.keras.layers.BatchNormalization())
+        # self.net_layers.append(tf.keras.layers.LeakyReLU())
+        # self.net_layers.append(tf.keras.layers.Conv2DTranspose(64, (4, 4), strides=(2, 2), padding='same', use_bias=True)) # hints state that Conv2DTrans might work better with even kernel-size
+        # self.net_layers.append(tf.keras.layers.BatchNormalization())
+        # self.net_layers.append(tf.keras.layers.LeakyReLU())
+        # # last convlayer with tanh
+        # self.net_layers.append(tf.keras.layers.Conv2D(1, (3, 3), strides=(1, 1), padding='same', use_bias=True, activation='tanh'))
+        
         self.net_layers = []
         # initial Dense-Layer
-        self.net_layers.append(tf.keras.layers.Dense(7*7*128, use_bias=True, input_shape=(input_dim,)))
+        self.net_layers.append(tf.keras.layers.Dense(7*7*256, use_bias=False, input_shape=(input_dim,)))
         self.net_layers.append(tf.keras.layers.BatchNormalization())
         self.net_layers.append(tf.keras.layers.LeakyReLU())
-        self.net_layers.append(tf.keras.layers.Reshape((7,7,128)))
+        self.net_layers.append(tf.keras.layers.Reshape((7,7,256)))
         # use upsampling
-        self.net_layers.append(tf.keras.layers.Conv2DTranspose(256, (4, 4), strides=(2, 2), padding='same', use_bias=True)) # hints state that Conv2DTrans might work better with even kernel-size
+        self.net_layers.append(tf.keras.layers.Conv2DTranspose(128, (5, 5), strides=(1, 1), padding='same', use_bias=False))
         self.net_layers.append(tf.keras.layers.BatchNormalization())
         self.net_layers.append(tf.keras.layers.LeakyReLU())
-        self.net_layers.append(tf.keras.layers.Conv2D(128, (3, 3), strides=(1, 1), padding='same', use_bias=True))
-        self.net_layers.append(tf.keras.layers.BatchNormalization())
-        self.net_layers.append(tf.keras.layers.LeakyReLU())
-        self.net_layers.append(tf.keras.layers.Conv2DTranspose(64, (4, 4), strides=(2, 2), padding='same', use_bias=True)) # hints state that Conv2DTrans might work better with even kernel-size
+        self.net_layers.append(tf.keras.layers.Conv2DTranspose(64, (5, 5), strides=(2, 2), padding='same', use_bias=False))
         self.net_layers.append(tf.keras.layers.BatchNormalization())
         self.net_layers.append(tf.keras.layers.LeakyReLU())
         # last convlayer with tanh
-        self.net_layers.append(tf.keras.layers.Conv2D(1, (3, 3), strides=(1, 1), padding='same', use_bias=True, activation='tanh'))
+        self.net_layers.append(tf.keras.layers.Conv2DTranspose(1, (5, 5), strides=(2, 2), padding='same', use_bias=False, activation='tanh'))
 
-        self.optimizer = tf.keras.optimizers.Adam(1e-2)
+        self.optimizer = tf.keras.optimizers.Adam(1e-4)
         self.loss = tf.keras.losses.BinaryCrossentropy(from_logits=True)
         self.metrics_list = [
                         tf.keras.metrics.Mean(name="loss"),

@@ -6,6 +6,7 @@ import time
 import datetime
 import os
 import urllib.request
+import matplotlib.pyplot as plt
 
 def download_data():
     category = 'candle'
@@ -39,16 +40,16 @@ def prepare_dataset(dataset):
     # expand dim
     dataset = dataset.map(lambda vector: tf.expand_dims(vector, axis=-1))
     # shuffle, batch, prefetch
-    dataset = dataset.shuffle(1000)
+    dataset = dataset.shuffle(50000)
     dataset = dataset.batch(BATCH_SIZE, drop_remainder=True)
     dataset = dataset.prefetch(32)
     return dataset
 
 
 
-BATCH_SIZE = 32
-NOISE_INPUT_DIM = 150
-EPOCHS = 20
+BATCH_SIZE = 256
+NOISE_INPUT_DIM = 100
+EPOCHS = 50
 
 
 # load tensorboard extension
@@ -76,8 +77,8 @@ download_data()
 # loading the dataset and split into train and test set
 images = np.load('npy_files/candle.npy')
 print(f"Total num of images: {len(images)}")
-train_images = images[:20000]
-test_images = images[20000:30000]
+train_images = images[:100000]
+test_images = images[100000:140000]
 
 # maybe a smaller dataset
 train_dataset = tf.data.Dataset.from_tensor_slices((train_images))
@@ -88,7 +89,7 @@ print(f"Shape of dataset: {prepared_test_dataset}")
 
 generator = Generator(input_dim=NOISE_INPUT_DIM)
 discriminator = Discriminator()
-test_image_noise = tf.random.normal([BATCH_SIZE, NOISE_INPUT_DIM])
+test_image_noise = tf.random.normal([1, NOISE_INPUT_DIM])
 
 for epoch in range(EPOCHS):
     start = time.time()
@@ -134,9 +135,13 @@ for epoch in range(EPOCHS):
 
         # every 5 epochs generate images for the test_image_noise and write it to tensorboard
         if (epoch+1)%5 == 0:
-            generated_test_images = generator(test_image_noise)
+            generated_test_images = generator(test_image_noise, training=False)
             # save a batch of images for this epoch (have to be between 0 and 1)
             tf.summary.image(name="generated_images",data = generated_test_images, step=epoch, max_outputs=32)
+            
+            print("Picture from epoch {} ".format(epoch))
+            plt.imshow(generated_images[0, :, :, 0], cmap='gray')
+            plt.show()
     
     # reset all metrics
     generator.reset_metrics()

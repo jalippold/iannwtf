@@ -9,25 +9,38 @@ class Discriminator(tf.keras.Model):
     def __init__(self):
         super(Discriminator, self).__init__()
 
+        # self.net_layers = []
+        # self.net_layers.append(tf.keras.layers.Conv2D(64, (3, 3), strides=(1, 1), padding='valid',
+        #                                              input_shape=[28, 28, 1]))
+        # self.net_layers.append(tf.keras.layers.BatchNormalization())
+        # self.net_layers.append(tf.keras.layers.LeakyReLU())
+        # self.net_layers.append(tf.keras.layers.Dropout(0.2))
+        # self.net_layers.append(tf.keras.layers.Conv2D(128, (5, 5), strides=(2, 2), padding='same'))
+        # self.net_layers.append(tf.keras.layers.BatchNormalization())
+        # self.net_layers.append(tf.keras.layers.LeakyReLU())
+        # self.net_layers.append(tf.keras.layers.Dropout(0.2))
+        # self.net_layers.append(tf.keras.layers.Conv2D(256, (5, 5), strides=(2, 2), padding='same'))
+        # self.net_layers.append(tf.keras.layers.BatchNormalization())
+        # self.net_layers.append(tf.keras.layers.LeakyReLU())
+        # self.net_layers.append(tf.keras.layers.Dropout(0.2))
+        # self.net_layers.append(tf.keras.layers.Flatten())
+        # # Dense classification layer
+        # self.net_layers.append(tf.keras.layers.Dense(1, activation=tf.keras.activations.sigmoid))
+
         self.net_layers = []
-        self.net_layers.append(tf.keras.layers.Conv2D(64, (3, 3), strides=(1, 1), padding='valid',
+        self.net_layers.append(tf.keras.layers.Conv2D(64, (5, 5), strides=(2, 2), padding='same',
                                                      input_shape=[28, 28, 1]))
-        self.net_layers.append(tf.keras.layers.BatchNormalization())
         self.net_layers.append(tf.keras.layers.LeakyReLU())
-        self.net_layers.append(tf.keras.layers.Dropout(0.2))
-        self.net_layers.append(tf.keras.layers.Conv2D(128, (5, 5), strides=(2, 2), padding='same'))
-        self.net_layers.append(tf.keras.layers.BatchNormalization())
+        self.net_layers.append(tf.keras.layers.Dropout(0.3))
+        self.net_layers.append(
+            tf.keras.layers.Conv2D(128, (5, 5), strides=(2, 2), padding='same'))
         self.net_layers.append(tf.keras.layers.LeakyReLU())
-        self.net_layers.append(tf.keras.layers.Dropout(0.2))
-        self.net_layers.append(tf.keras.layers.Conv2D(256, (5, 5), strides=(2, 2), padding='same'))
-        self.net_layers.append(tf.keras.layers.BatchNormalization())
-        self.net_layers.append(tf.keras.layers.LeakyReLU())
-        self.net_layers.append(tf.keras.layers.Dropout(0.2))
+        self.net_layers.append(tf.keras.layers.Dropout(0.3))
         self.net_layers.append(tf.keras.layers.Flatten())
         # Dense classification layer
-        self.net_layers.append(tf.keras.layers.Dense(1, activation=tf.keras.activations.sigmoid))
+        self.net_layers.append(tf.keras.layers.Dense(1))
 
-        self.optimizer = tf.keras.optimizers.Adam(1e-2)
+        self.optimizer = tf.keras.optimizers.Adam(1e-4)
         self.loss = tf.keras.losses.BinaryCrossentropy(from_logits=True)
         self.metrics_list = [
                         tf.keras.metrics.Mean(name="loss"),
