@@ -8,14 +8,17 @@ import re
 
 
 def create_input_target_pairs(tokens, window_size=4):
-    data = []
+    inputs = []
+    targets = []
     for i, input in enumerate(tokens):
         for j in range(0, ceil(window_size/2)):
             if i-1-j >= 0:
-                data.append((input, tokens[i-1-j]))
+                inputs.append(input)
+                targets.append(tokens[i-1-j])
             if i+1+j < VOCAB_SIZE:
-                data.append((input, tokens[i+1+j]))
-    return data
+                inputs.append(input)
+                targets.append(tokens[i+1+j])
+    return inputs, targets
 
 def prepare_dataset(dataset):
 
@@ -52,11 +55,15 @@ with open("./bible.txt", "r") as f:
 splitter = tf_txt.WhitespaceTokenizer() #tf_txt.RegexSplitter(split_regex=" *")
 text_split = splitter.split(text)[:VOCAB_SIZE]
 
-train_dataset = tf.data.Dataset.from_tensor_slices(create_input_target_pairs(text_split.numpy()))
+inputs, targets = create_input_target_pairs(text_split.numpy())
+train_dataset = tf.data.Dataset.from_tensor_slices((inputs, targets))
 train_dataset_prepared = train_dataset.apply(prepare_dataset)
 
-print(list(train_dataset_prepared.take(1).as_numpy_iterator()))
-print(train_dataset_prepared.take(1))
+print(train_dataset_prepared)
+for input, target in train_dataset_prepared:
+    print(input)
+    print(target)
+    break
 
 exit(1)
 
