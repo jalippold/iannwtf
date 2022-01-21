@@ -52,10 +52,11 @@ with open("./bible.txt", "r") as f:
 splitter = tf_txt.WhitespaceTokenizer() #tf_txt.RegexSplitter(split_regex=" *")
 text_split = splitter.split(text)[:VOCAB_SIZE]
 
-train_dataset = tf.data.Dataset.from_tensors(create_input_target_pairs(text_split.numpy()))
+train_dataset = tf.data.Dataset.from_tensor_slices(create_input_target_pairs(text_split.numpy()))
 train_dataset_prepared = train_dataset.apply(prepare_dataset)
 
-print(train_dataset.take(1))
+print(list(train_dataset_prepared.take(1).as_numpy_iterator()))
+print(train_dataset_prepared.take(1))
 
 exit(1)
 
