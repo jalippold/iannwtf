@@ -1,38 +1,86 @@
 from math import ceil
+from multiprocessing.spawn import prepare
 import tensorflow as tf
 import tensorflow_text as tf_txt
 import numpy as np
 import matplotlib.pyplot as plt
 import time
 import re
+import tqdm
+import string
+
+from skipGramModel import SkipGramModel
 
 
-def create_input_target_pairs(tokens, window_size=4):
-    inputs = []
-    targets = []
-    for i, input in enumerate(tokens):
-        for j in range(0, ceil(window_size/2)):
-            if i-1-j >= 0:
-                inputs.append(input)
-                targets.append(tokens[i-1-j])
-            if i+1+j < VOCAB_SIZE:
-                inputs.append(input)
-                targets.append(tokens[i+1+j])
-    return inputs, targets
 
 def prepare_dataset(dataset):
 
     # shuffle, batch, prefetch
     dataset = dataset.shuffle(5000)
     dataset = dataset.batch(BATCH_SIZE, drop_remainder=True)
-    dataset = dataset.prefetch(128)
+    dataset = dataset.cache()
+    dataset = dataset.prefetch(buffer_size= tf.data.AUTOTUNE)
     return dataset
 
+### Took from https://www.tensorflow.org/tutorials/text/word2vec ####
+# Generates skip-gram pairs with negative sampling for a list of sequences
+# (int-encoded sentences) based on window size, number of negative samples
+# and vocabulary size.
+def generate_training_data(sequences, window_size, num_ns, vocab_size, seed):
+  # Elements of each training example are appended to these lists.
+  targets, contexts, labels = [], [], []
+
+  # Build the sampling table for vocab_size tokens.
+  sampling_table = tf.keras.preprocessing.sequence.make_sampling_table(vocab_size)
+
+  # Iterate over all sequences (sentences) in dataset.
+  for sequence in tqdm.tqdm(sequences):
+
+    # Generate positive skip-gram pairs for a sequence (sentence).
+    positive_skip_grams, _ = tf.keras.preprocessing.sequence.skipgrams(
+          sequence,
+          vocabulary_size=vocab_size,
+          sampling_table=sampling_table,
+          window_size=window_size,
+          negative_samples=0)
+
+    # Iterate over each positive skip-gram pair to produce training examples
+    # with positive context word and negative samples.
+    for target_word, context_word in positive_skip_grams:
+      context_class = tf.expand_dims(tf.constant([context_word], dtype="int64"), 1)
+
+      negative_sampling_candidates, _, _ = tf.random.log_uniform_candidate_sampler(
+          true_classes=context_class,
+          num_true=1,
+          num_sampled=num_ns,
+          unique=True,
+          range_max=vocab_size,
+          seed=seed,
+          name="negative_sampling")
+
+      # Build context and label vectors (for one target word)
+      negative_sampling_candidates = tf.expand_dims(
+          negative_sampling_candidates, 1)
+
+      context = tf.concat([context_class, negative_sampling_candidates], 0)
+      label = tf.constant([1] + [0]*num_ns, dtype="int64")
+
+      # Append each element from the training example to global lists.
+      targets.append(target_word)
+      contexts.append(context)
+      labels.append(label)
+
+  return targets, contexts, labels
 
 
-BATCH_SIZE = 32
+
+BATCH_SIZE = 1024
 EPOCHS = 10
-VOCAB_SIZE = 10000
+EXCERPT_SIZE = 10000
+WINDOW_SIZE = 2
+SEED = 42
+NUM_NEG_SAMPLES = 4
+SEQ_LENGTH = 10
 
 
 # load tensorboard extension
@@ -46,29 +94,54 @@ train_summary_writer = tf.summary.create_file_writer(train_log_path)
 # log writer for validation metrics
 val_summary_writer = tf.summary.create_file_writer(val_log_path)
 
-# TODO: prepare dataset
-with open("./bible.txt", "r") as f:
-    text = f.read()
-    text = text.lower()
-    text = re.sub('[^a-zA-Z ]', '', text.replace("\n", " "))
+# prepare dataset
+text_ds = tf.data.TextLineDataset("./bible.txt").filter(lambda x: tf.cast(tf.strings.length(x), bool))
 
-splitter = tf_txt.WhitespaceTokenizer() #tf_txt.RegexSplitter(split_regex=" *")
-text_split = splitter.split(text)[:VOCAB_SIZE]
+# Now, create a custom standardization function to lowercase the text and
+# remove punctuation.
+def custom_standardization(input_data):
+  lowercase = tf.strings.lower(input_data)
+  return tf.strings.regex_replace(lowercase,
+                                  '[%s]' % re.escape(string.punctuation), '')
 
-inputs, targets = create_input_target_pairs(text_split.numpy())
-train_dataset = tf.data.Dataset.from_tensor_slices((inputs, targets))
-train_dataset_prepared = train_dataset.apply(prepare_dataset)
+# Define the number of words in a sequence.
+vocab_size = EXCERPT_SIZE
+sequence_length = SEQ_LENGTH
 
-print(train_dataset_prepared)
-for input, target in train_dataset_prepared:
-    print(input)
-    print(target)
-    break
+# Use the TextVectorization layer to normalize, split, and map strings to
+# integers. Set output_sequence_length length to pad all samples to same length.
+vectorize_layer = tf.keras.layers.TextVectorization(
+    standardize=custom_standardization,
+    max_tokens=vocab_size,
+    output_mode='int',
+    output_sequence_length=sequence_length)
+
+vectorize_layer.adapt(text_ds.batch(BATCH_SIZE))
+
+# Vectorize the data in text_ds.
+text_vector_ds = text_ds.batch(1024).prefetch(tf.data.AUTOTUNE).map(vectorize_layer).unbatch()
+
+sequences = list(text_vector_ds.as_numpy_iterator())
+print(len(sequences))
+
+targets, contexts, labels = generate_training_data(sequences, WINDOW_SIZE, NUM_NEG_SAMPLES, vocab_size, SEED)
+
+targets = np.array(targets)
+contexts = np.array(contexts)[:,:,0]
+labels = np.array(labels)
+
+print(f"targets.shape: {targets.shape}")
+print(f"contexts.shape: {contexts.shape}")
+print(f"labels.shape: {labels.shape}")
+
+dataset = tf.data.Dataset.from_tensor_slices(((targets, contexts), labels))
+dataset = dataset.apply(prepare_dataset)
+print(dataset)
 
 exit(1)
 
 # TODO: init model
-model = None
+model = SkipGramModel()
 
 for epoch in range(EPOCHS):
     start = time.time()
