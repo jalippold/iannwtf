@@ -76,7 +76,7 @@ def generate_training_data(sequences, window_size, num_ns, vocab_size, seed):
 
 BATCH_SIZE = 1024
 EPOCHS = 10
-EXCERPT_SIZE = 10000
+VOCAB_SIZE = 10000
 WINDOW_SIZE = 2
 SEED = 42
 NUM_NEG_SAMPLES = 4
@@ -105,7 +105,7 @@ def custom_standardization(input_data):
                                   '[%s]' % re.escape(string.punctuation), '')
 
 # Define the number of words in a sequence.
-vocab_size = EXCERPT_SIZE
+vocab_size = VOCAB_SIZE
 sequence_length = SEQ_LENGTH
 
 # Use the TextVectorization layer to normalize, split, and map strings to
