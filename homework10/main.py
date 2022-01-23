@@ -47,28 +47,32 @@ def generate_training_data(sequences, window_size, num_ns, vocab_size, seed):
     # Iterate over each positive skip-gram pair to produce training examples
     # with positive context word and negative samples.
     for target_word, context_word in positive_skip_grams:
-      context_class = tf.expand_dims(tf.constant([context_word], dtype="int64"), 1)
+    #   context_class = tf.expand_dims(tf.constant([context_word], dtype="int64"), 1)
 
-      negative_sampling_candidates, _, _ = tf.random.log_uniform_candidate_sampler(
-          true_classes=context_class,
-          num_true=1,
-          num_sampled=num_ns,
-          unique=True,
-          range_max=vocab_size,
-          seed=seed,
-          name="negative_sampling")
+    #   negative_sampling_candidates, _, _ = tf.random.log_uniform_candidate_sampler(
+    #       true_classes=context_class,
+    #       num_true=1,
+    #       num_sampled=num_ns,
+    #       unique=True,
+    #       range_max=vocab_size,
+    #       seed=seed,
+    #       name="negative_sampling")
 
-      # Build context and label vectors (for one target word)
-      negative_sampling_candidates = tf.expand_dims(
-          negative_sampling_candidates, 1)
+    #   # Build context and label vectors (for one target word)
+    #   negative_sampling_candidates = tf.expand_dims(
+    #       negative_sampling_candidates, 1)
 
-      context = tf.concat([context_class, negative_sampling_candidates], 0)
-      label = tf.constant([1] + [0]*num_ns, dtype="int64")
+    #   context = tf.concat([context_class, negative_sampling_candidates], 0)
+    #   label = tf.constant([1] + [0]*num_ns, dtype="int64")
 
-      # Append each element from the training example to global lists.
-      targets.append(target_word)
-      contexts.append(context)
-      labels.append(label)
+    #   # Append each element from the training example to global lists.
+    #   targets.append(target_word)
+    #   contexts.append(context)
+    #   labels.append(label)
+
+        targets.append(target_word)
+        contexts.append(context_word)
+        labels.append(tf.constant(1, dtype=tf.int64))
 
   return targets, contexts, labels
 
@@ -120,6 +124,7 @@ vectorize_layer.adapt(text_ds.batch(BATCH_SIZE))
 
 # save vocabulary for reference
 inverse_vocab = vectorize_layer.get_vocabulary()
+vocab = {word : i for i, word in enumerate(inverse_vocab)}
 
 # Vectorize the data in text_ds.
 text_vector_ds = text_ds.batch(1024).prefetch(tf.data.AUTOTUNE).map(vectorize_layer).unbatch()
@@ -130,7 +135,7 @@ sequences = list(text_vector_ds.as_numpy_iterator())
 targets, contexts, labels = generate_training_data(sequences, WINDOW_SIZE, NUM_NEG_SAMPLES, vocab_size, SEED)
 
 targets = np.array(targets)
-contexts = np.array(contexts)[:,:,0]
+contexts = np.array(contexts)#[:,:,0]
 labels = np.array(labels)
 
 print(f"targets.shape: {targets.shape}")
@@ -144,8 +149,10 @@ print(dataset)
 model = SkipGramModel(vocab_sz=VOCAB_SIZE, embed_sz=64)
 
 
-eval_tokens = [i for i in range(100, 110)]
-eval_words = [inverse_vocab[token] for token in eval_tokens]
+# eval_tokens = [i for i in range(100, 110)]
+# eval_words = [inverse_vocab[token] for token in eval_tokens]
+eval_words = ["holy", "father", "wine", "poison", "love", "strong", "day"]
+eval_tokens = [vocab[word] for word in eval_words]
 pp = pprint.PrettyPrinter(indent=4)
 print(f"Eval words and tokens:\n{eval_tokens}\n{eval_words}")
 

@@ -1,45 +1,63 @@
-from numpy import dtype
 import tensorflow as tf
 
 
-class SkipGramModel(tf.keras.Model):
+class SkipGramModel(tf.keras.layers.Layer):
     """
     https://www.tensorflow.org/tutorials/text/word2vec
     """
     def __init__(self, vocab_sz, embed_sz=32):
         super(SkipGramModel, self).__init__()
-        self.embedding_target = tf.keras.layers.Embedding(vocab_sz, embed_sz, input_length=1)
-        self.embedding_context = tf.keras.layers.Embedding(vocab_sz, embed_sz, input_length=5) # num_negatives + 1
+        # self.embedding_target = tf.keras.layers.Embedding(vocab_sz, embed_sz, input_length=1)
+        # self.embedding_context = tf.keras.layers.Embedding(vocab_sz, embed_sz, input_length=5) # num_negatives + 1
         self.optimizer = tf.keras.optimizers.Adam(1e-4)
 
         self.vocab_size = vocab_sz
+        self.embedding_size = embed_sz
 
         self.metrics_list = [
                         tf.keras.metrics.Mean(name="loss"),
                         # tf.keras.metrics.BinaryAccuracy, 
                         ]
 
-
-    """
-
     def build(self, input_shape):
-        pass"""
+        self.embedding_target = self.add_weight(shape=(self.vocab_size, self.embedding_size),
+                                    initializer='random_normal',
+                                    trainable=True)
+        self.scores = self.add_weight(shape=(self.vocab_size, self.embedding_size),
+                        initializer='random_normal',
+                        trainable=True)
+        self.biases = self.add_weight(shape=(self.vocab_size,),
+                initializer='random_normal',
+                trainable=True)
 
     @tf.function
     def call(self, inputs, training=False):
         target, context, label = inputs
-        target_emb = self.embedding_target(target, training=training)
-        context_emb = self.embedding_context(context, training=training)
-        #context_emb = self.embedding_target(context, training=training)
-        print(target_emb)
-        print(context_emb)
+        # target_emb = self.embedding_target(target, training=training)
+        # context_emb = self.embedding_context(context, training=training)
+        # #context_emb = self.embedding_target(context, training=training)
+        # print(target_emb)
+        # print(context_emb)
 
-        # target has shape (BATCH_SIZE, EMBEDDING_SIZE), context (BATCH_SIZE, CONTEXT_SIZE, EMBEDDING_SIZE)
-        # get dot product in shape (BATCH_SIZE, CONTEXT_SIZE)
-        dots = tf.einsum("be, bce->bc", target_emb, context_emb)
-        print(dots)
-        print(label)
-        return tf.math.multiply(dots, tf.cast(label, tf.float32)) # return loss for positive label, 0 for negative label -> TODO!
+        # # target has shape (BATCH_SIZE, EMBEDDING_SIZE), context (BATCH_SIZE, CONTEXT_SIZE, EMBEDDING_SIZE)
+        # # get dot product in shape (BATCH_SIZE, CONTEXT_SIZE)
+        # dots = tf.einsum("be, bce->bc", target_emb, context_emb)
+        # print(dots)
+        # print(label)
+        # return tf.math.multiply(dots, tf.cast(label, tf.float32)) # return loss for positive label, 0 for negative label -> TODO!
+
+        target_embed = tf.nn.embedding_lookup(self.embedding_target, target)
+        context = tf.expand_dims(context, -1)
+
+        loss = tf.reduce_mean(tf.nn.nce_loss(
+            weights=self.scores, 
+            biases=self.biases, 
+            labels=context, 
+            inputs=target_embed, 
+            num_sampled=64, 
+            num_classes=self.vocab_size
+        ))
+        return loss
 
     @tf.function
     def train_step(self, target, context, label):
@@ -78,14 +96,16 @@ class SkipGramModel(tf.keras.Model):
 
     #@tf.function
     def calculate_nearest_neighbors(self, token, k):
-        token_emb = self.embedding_target(tf.constant(token))
+        # token_emb = self.embedding_target(tf.constant(token))
+        token_emb = tf.nn.embedding_lookup(self.embedding_target, token)
         knn = [(None, tf.constant(-10.)) for i in range(k)]
 
         for i in range(self.vocab_size):
             if i == token:
                 continue
 
-            emb = self.embedding_target(tf.constant(i))
+            # emb = self.embedding_target(tf.constant(i))
+            emb = tf.nn.embedding_lookup(self.embedding_target, tf.constant(i))
             cs = tf.tensordot(token_emb, emb, axes=1)
 
             # first list element is smallest
