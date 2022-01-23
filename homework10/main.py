@@ -10,7 +10,7 @@ import tqdm
 import string
 
 from skipGramModel import SkipGramModel
-
+import pprint
 
 
 def prepare_dataset(dataset):
@@ -102,7 +102,7 @@ text_ds = tf.data.TextLineDataset("./bible.txt").filter(lambda x: tf.cast(tf.str
 def custom_standardization(input_data):
   lowercase = tf.strings.lower(input_data)
   return tf.strings.regex_replace(lowercase,
-                                  '[%s]' % re.escape(string.punctuation), '')
+                                  '[%s\d]' % re.escape(string.punctuation), '')
 
 # Define the number of words in a sequence.
 vocab_size = VOCAB_SIZE
@@ -118,11 +118,14 @@ vectorize_layer = tf.keras.layers.TextVectorization(
 
 vectorize_layer.adapt(text_ds.batch(BATCH_SIZE))
 
+# save vocabulary for reference
+inverse_vocab = vectorize_layer.get_vocabulary()
+
 # Vectorize the data in text_ds.
 text_vector_ds = text_ds.batch(1024).prefetch(tf.data.AUTOTUNE).map(vectorize_layer).unbatch()
 
 sequences = list(text_vector_ds.as_numpy_iterator())
-print(len(sequences))
+
 
 targets, contexts, labels = generate_training_data(sequences, WINDOW_SIZE, NUM_NEG_SAMPLES, vocab_size, SEED)
 
@@ -138,20 +141,24 @@ dataset = tf.data.Dataset.from_tensor_slices(((targets, contexts), labels))
 dataset = dataset.apply(prepare_dataset)
 print(dataset)
 
-exit(1)
+model = SkipGramModel(vocab_sz=VOCAB_SIZE, embed_sz=64)
 
-# TODO: init model
-model = SkipGramModel()
+
+eval_tokens = [i for i in range(100, 110)]
+eval_words = [inverse_vocab[token] for token in eval_tokens]
+pp = pprint.PrettyPrinter(indent=4)
+print(f"Eval words and tokens:\n{eval_tokens}\n{eval_words}")
 
 for epoch in range(EPOCHS):
     start = time.time()
     
     # Training:
+    for (target, context), label in dataset:    
+        metrics = model.train_step(target, context, label)
 
 
     # print the metrics
     print('Time for epoch {} is {} sec'.format(epoch + 1, time.time() - start))
-
     
     # logging the training metrics to the log file which is used by tensorboard
     with train_summary_writer.as_default():
@@ -161,18 +168,15 @@ for epoch in range(EPOCHS):
     # reset all metrics (requires a reset_metrics method in the model)
     model.reset_metrics()
 
-    # Validation:
+    print(f"Getting nearest neighbours for some example words")
+    neigbours = {}
+    for token, word in zip(eval_tokens, eval_words):
+        nns = model.calculate_nearest_neighbors(token, 5)
+        nbs = [inverse_vocab[i] for (i, val) in nns]
+        neigbours[word] = nbs
 
-
-
-    
-    # logging the validation metrics to the log file which is used by tensorboard
-    with val_summary_writer.as_default():
-        for metric in model.metrics:
-            tf.summary.scalar(f"{metric.name}", metric.result(), step=epoch)
-        
-    # reset all metrics
-    model.reset_metrics()
+    print("Some words neigbours in the embedding:")
+    pp.pprint(neigbours)
     
 
 # open the tensorboard to inspect the data for the 100 steps
