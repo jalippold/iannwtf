@@ -1,4 +1,3 @@
-from numpy import int32
 from TransformerBlock import TransformerBlock
 from InputEmbeddingLayer import InputEmbeddingLayer
 
@@ -16,7 +15,7 @@ class MyNLPModel(tf.keras.Model):
         self.embed_dim = embed_dim
         self.dense_dim = dense_dim
         self.optimizer = tf.keras.optimizers.Adam()
-        self.loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+        self.loss_function = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 
         self.metrics_list = [
                         tf.keras.metrics.Mean(name="loss"),

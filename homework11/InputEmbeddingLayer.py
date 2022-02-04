@@ -19,4 +19,5 @@ class InputEmbeddingLayer(tf.keras.layers.Layer):
         input_e = self.token_embed(input)
         pos_e = self.pos_embed(pos_code_indices)
         # return the sum of both 
-        return tf.keras.layers.Add()([input_e, pos_e])
+        # return tf.keras.layers.Add()([input_e, pos_e])
+        return tf.add(input_e, pos_e)
