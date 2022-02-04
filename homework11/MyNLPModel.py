@@ -70,8 +70,8 @@ class MyNLPModel(tf.keras.Model):
         input_len = len(tokens)
         while self.seq_len >= input_len:
             padding = [-1 for _ in range(self.seq_len-input_len)]
-            padded_input = tf.expand_dims(tf.concat(tf.convert_to_tensor(padding, dtype=int32), tokens), 0)
-            scores = self(padded_input)
+            padded_input = tf.expand_dims(tf.concat(tf.convert_to_tensor(padding, dtype=tf.int32), tokens), 0)
+            scores = self(padded_input, training=False)
 
             values, indices = tf.math.top_k(scores, top_k)
             sample_ind = tf.random.categorical(values, 1)
