@@ -100,4 +100,4 @@ if __name__ == "__main__":
         print("\n")
 
     # open the tensorboard
-    # %tensorboard --logdir test_logs/
+    # %tensorboard --logdir logs/
