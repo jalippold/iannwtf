@@ -1,3 +1,4 @@
+from numpy import int32
 from TransformerBlock import TransformerBlock
 from InputEmbeddingLayer import InputEmbeddingLayer
 
@@ -10,6 +11,10 @@ class MyNLPModel(tf.keras.Model):
         super(MyNLPModel, self).__init__()
 
         self.tokenizer = tokenizer
+        self.seq_len = seq_len
+        self.vocab_size = vocab_size
+        self.embed_dim = embed_dim
+        self.dense_dim = dense_dim
         self.optimizer = tf.keras.optimizers.Adam()
         self.loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 
@@ -61,5 +66,18 @@ class MyNLPModel(tf.keras.Model):
         return {m.name: m.result() for m in self.metrics}
 
 
-    def gen_text(self, prompt):
-        pass
+    def gen_text(self, prompt, top_k):
+        tokens = self.tokenizer.tokenize(prompt)
+        input_len = len(tokens)
+        while self.seq_len >= input_len:
+            padding = [-1 for _ in range(self.seq_len-input_len)]
+            padded_input = tf.expand_dims(tf.concat(tf.convert_to_tensor(padding, dtype=int32), tokens), 0)
+            scores = self(padded_input)
+
+            values, indices = tf.math.top_k(scores, top_k)
+            sample_ind = tf.random.categorical(values, 1)
+            tokens = tf.concat(tokens, indices[sample_ind])
+
+            input_len += 1
+
+        return self.tokenizer.detokenize(tokens)
