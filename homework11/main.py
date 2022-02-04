@@ -7,9 +7,13 @@ import tqdm
 import os
 import sentencepiece as sp
 
+from MyNLPModel import MyNLPModel
+
 VOCAB_SIZE = 2000           # something between 2000 and 7000
-SLIDING_WINDOW_SIZE = 128    # somethin between 32 and 256
+SLIDING_WINDOW_SIZE = 128   # somethin between 32 and 256
 BATCH_SIZE = 256
+EMBED_DIM = 128             # something between 64 and 256
+DENSE_DIM = 64              # someting between 32 and 256
 
 
 def get_data():
@@ -55,5 +59,5 @@ if __name__ == "__main__":
     dataset = tf.data.Dataset.from_tensor_slices(tokens)
     dataset = dataset.apply(prepare_dataset)
 
-    print(dataset)
+    model = MyNLPModel(tokenizer=tokenizer, seq_len=SLIDING_WINDOW_SIZE, vocab_size=VOCAB_SIZE, embed_dim=EMBED_DIM, dense_dim=DENSE_DIM)
 
