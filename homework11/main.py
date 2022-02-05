@@ -8,12 +8,12 @@ import tqdm
 import time
 import sentencepiece as sp
 
-VOCAB_SIZE = 2000           # something between 2000 and 7000
-SLIDING_WINDOW_SIZE = 128   # somethin between 32 and 256
-BATCH_SIZE = 256
+VOCAB_SIZE = 5000           # something between 2000 and 7000
+SLIDING_WINDOW_SIZE = 64   # somethin between 32 and 256
+BATCH_SIZE = 512
 EMBED_DIM = 128             # something between 64 and 256
-DENSE_DIM = 64              # someting between 32 and 256
-EPOCHS = 10
+DENSE_DIM = 128             # someting between 32 and 256
+EPOCHS = 100
 
 
 def get_data():
@@ -64,6 +64,7 @@ if __name__ == "__main__":
 
     ### Set up tensorboard
     # load tensorboard extension
+    # !rm -rf ./logs/
     # %load_ext tensorboard
 
     # Define where to save the log
@@ -72,6 +73,9 @@ if __name__ == "__main__":
 
     # log writer for training metrics
     train_summary_writer = tf.summary.create_file_writer(train_log_path)
+
+    # open the tensorboard before training in order to keep track of training progress
+    # %tensorboard --logdir logs/
 
     ### training loop
     for epoch in range(EPOCHS):
@@ -88,16 +92,19 @@ if __name__ == "__main__":
         # print the metrics
         print('Time for epoch {} is {} sec'.format(epoch + 1, time.time() - start))
         print([f"{key}: {value}" for (key, value) in zip(list(metrics.keys()), list(metrics.values()))])
+
+        # Test on a sample
+        test_text = "Training models is a good thing because"
+        prediction = model.gen_text(test_text, 1000)
+        print(prediction)
         
-        # logging the validation metrics to the log file which is used by tensorboard
+        # logging the metrics to the log file which is used by tensorboard
         with train_summary_writer.as_default():
             for metric in model.metrics:
                 tf.summary.scalar(f"{metric.name}", metric.result(), step=epoch)
+                tf.summary.text(name="generated_text", data = prediction, step=epoch)
         
         # reset all metrics (requires a reset_metrics method in the model)
         model.reset_metrics()
         
         print("\n")
-
-    # open the tensorboard
-    # %tensorboard --logdir logs/

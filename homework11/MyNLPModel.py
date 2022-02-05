@@ -70,12 +70,13 @@ class MyNLPModel(tf.keras.Model):
         input_len = len(tokens)
         while self.seq_len >= input_len:
             padding = [-1 for _ in range(self.seq_len-input_len)]
-            padded_input = tf.expand_dims(tf.concat(tf.convert_to_tensor(padding, dtype=tf.int32), tokens), 0)
+            padded_input = tf.expand_dims(tf.concat([tf.convert_to_tensor(padding, dtype=tf.int32), tokens], axis=0), 0)
             scores = self(padded_input, training=False)
 
             values, indices = tf.math.top_k(scores, top_k)
             sample_ind = tf.random.categorical(values, 1)
-            tokens = tf.concat(tokens, indices[sample_ind])
+            new_token = tf.gather(indices, sample_ind.numpy()[0][0], axis=1)      # extract the single sample from the tensor for gathering and also gather from axis 1 because axis 0 is dummy-batch-dimension
+            tokens = tf.concat([tokens, new_token], axis=0)
 
             input_len += 1
 
